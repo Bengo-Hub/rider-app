@@ -1,0 +1,40 @@
+{
+  "name": "Urban Loft - Rider App",
+  "short_name": "Rider App",
+  "description": "Manage deliveries, track routes, and earn with Urban Loft",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/rider-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/rider-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Active Deliveries",
+      "short_name": "Deliveries",
+      "description": "View active delivery tasks",
+      "url": "/urban-loft/deliveries"
+    },
+    {
+      "name": "Earnings",
+      "short_name": "Earnings",
+      "description": "View daily earnings",
+      "url": "/urban-loft/earnings"
+    }
+  ],
+  "categories": ["business", "productivity", "navigation"],
+  "prefer_related_applications": false
+}
