@@ -7,7 +7,7 @@
 // SSO configuration
 const SSO_BASE_URL =
   process.env.NEXT_PUBLIC_SSO_URL ?? "https://sso.codevertexitsolutions.com";
-const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID ?? "";
+const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID ?? "rider-app";
 
 // Logistics API for rider profile sync checks
 const LOGISTICS_API_URL =
