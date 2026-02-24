@@ -257,7 +257,11 @@ export function ActiveDeliveryView({
               </label>
               <label className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-600 active:bg-gray-50">
                 <Camera className="h-5 w-5" />
-                {proofData.photo_url ? "Photo captured" : "Take a photo"}
+                {proofData.photo_url ? (
+                  <span className="text-green-600 font-semibold">✓ Photo captured</span>
+                ) : (
+                  "Take a photo"
+                )}
                 <input
                   type="file"
                   accept="image/*"
@@ -265,13 +269,32 @@ export function ActiveDeliveryView({
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      // In production this would upload to S3/MinIO and set the URL
-                      setProofData((p) => ({ ...p, photo_url: URL.createObjectURL(file) }));
-                    }
+                    if (!file) return;
+                    // Compress and convert to base64 for storage in task metadata
+                    const img = new Image();
+                    const objectUrl = URL.createObjectURL(file);
+                    img.onload = () => {
+                      const MAX = 800;
+                      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+                      const canvas = document.createElement("canvas");
+                      canvas.width = Math.round(img.width * scale);
+                      canvas.height = Math.round(img.height * scale);
+                      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+                      const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+                      URL.revokeObjectURL(objectUrl);
+                      setProofData((p) => ({ ...p, photo_url: dataUrl }));
+                    };
+                    img.src = objectUrl;
                   }}
                 />
               </label>
+              {proofData.photo_url && (
+                <img
+                  src={proofData.photo_url}
+                  alt="Proof of delivery"
+                  className="mt-2 h-24 w-full rounded-xl object-cover border border-gray-200"
+                />
+              )}
             </div>
 
             {/* Notes */}
