@@ -21,6 +21,7 @@ export function buildAuthorizeUrl(params: {
   state: string;
   redirectUri: string;
   scope?: string;
+  tenant?: string;
 }): string {
   const url = new URL("/api/v1/authorize", SSO_BASE_URL);
   url.searchParams.set("response_type", "code");
@@ -30,6 +31,9 @@ export function buildAuthorizeUrl(params: {
   url.searchParams.set("state", params.state);
   url.searchParams.set("code_challenge", params.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
+  if (params.tenant) {
+    url.searchParams.set("tenant", params.tenant);
+  }
   return url.toString();
 }
 

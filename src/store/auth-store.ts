@@ -49,7 +49,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setAccessToken: (token: string | null) => void;
   setLoading: (isLoading: boolean) => void;
-  redirectToSSO: (returnTo?: string) => Promise<void>;
+  redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
   logout: () => void;
 }
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
       /**
        * Redirect to SSO authorize endpoint with PKCE.
        */
-      redirectToSSO: async (returnTo?: string) => {
+      redirectToSSO: async (returnTo?: string, tenant?: string) => {
         // Store return URL for after callback
         if (returnTo) {
           sessionStorage.setItem("sso_return_to", returnTo);
@@ -98,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
           codeChallenge: challenge,
           state,
           redirectUri,
+          tenant,
         });
 
         window.location.href = authorizeUrl;

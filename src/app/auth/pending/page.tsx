@@ -24,7 +24,11 @@ export default function AuthPendingPage() {
         setUser(u);
 
         if (u.status !== "pending" && u.status !== "pending_review") {
-          router.replace("/");
+          const orgSlug =
+            localStorage.getItem("tenantSlug") ??
+            process.env.NEXT_PUBLIC_TENANT_SLUG ??
+            "urban-loft";
+          router.replace(`/${orgSlug}/profile`);
         }
       } catch {
         // Ignore polling errors
