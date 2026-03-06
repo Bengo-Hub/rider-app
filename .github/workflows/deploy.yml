@@ -97,17 +97,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          echo "Secrets were just synced in this workflow run."
-          echo "Re-triggering workflow so the deploy job picks up the new values..."
+          echo "⚠️ Secrets were just synced in this workflow run."
           gh workflow run deploy.yml --repo "${{ github.repository }}" --ref "${{ github.ref }}"
-          echo "Workflow re-triggered. This run will exit gracefully."
           exit 0
 
       - name: Abort if sync was partial
         if: needs.sync-secrets.outputs.result == 'partial'
         run: |
-          echo "Secret sync timed out — some secrets may not have been created."
-          echo "Check: https://github.com/Bengo-Hub/devops-k8s/actions"
+          echo "❌ Secret sync timed out"
           exit 1
 
       - name: Checkout code
@@ -125,7 +122,9 @@ jobs:
       - name: Set deployment variables
         if: needs.sync-secrets.outputs.result != 'synced'
         run: |
+          echo "DEPLOY=true" >> $GITHUB_ENV
           echo "NAMESPACE=logistics" >> $GITHUB_ENV
+          echo "ENV_SECRET_NAME=rider-app-secrets" >> $GITHUB_ENV
           echo "REGISTRY_SERVER=docker.io" >> $GITHUB_ENV
           echo "REGISTRY_NAMESPACE=codevertex" >> $GITHUB_ENV
           echo "VALUES_FILE_PATH=apps/rider-app/values.yaml" >> $GITHUB_ENV
@@ -136,17 +135,19 @@ jobs:
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
           GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
           GITHUB_SHA: ${{ github.sha }}
-          GIT_USER: ${{ secrets.GIT_USER || 'Rider App Bot' }}
-          GIT_EMAIL: ${{ secrets.GIT_EMAIL || 'dev@bengobox.com' }}
-          # Build-time env vars baked into Next.js bundle
-          NEXT_PUBLIC_LOGISTICS_API_URL: https://logisticsapi.codevertexitsolutions.com
-          NEXT_PUBLIC_SSO_URL: https://sso.codevertexitsolutions.com
-          NEXT_PUBLIC_APP_URL: https://rider.codevertexitsolutions.com
-          NEXT_PUBLIC_TENANT_SLUG: urban-loft
+          DEPLOY: true
+          NAMESPACE: logistics
+          APP_NAME: rider-app
+          GIT_USER: "Rider App Bot"
+          GIT_EMAIL: "dev@bengobox.com"
+          # Build-time env vars baked into Next.js bundle (override via repo secrets if needed)
+          NEXT_PUBLIC_LOGISTICS_API_URL: ${{ secrets.NEXT_PUBLIC_LOGISTICS_API_URL }}
+          NEXT_PUBLIC_SSO_URL: ${{ secrets.NEXT_PUBLIC_SSO_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_TENANT_SLUG: ${{ secrets.NEXT_PUBLIC_TENANT_SLUG }}
         run: |
           chmod +x build.sh
           ./build.sh

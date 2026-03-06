@@ -1,0 +1,15 @@
+# Rider App - Kubernetes Secret template for env-specific config
+# Used when deploying with build.sh (DEPLOY=true) and KUBE_CONFIG set.
+# Replace placeholder values or sync from devops-k8s; do not commit real secrets.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rider-app-secrets
+  namespace: logistics
+type: Opaque
+stringData:
+  # Optional: Mapbox token for map features (values.yaml references this)
+  # mapboxToken: ""
+  # Build-time / runtime overrides (if using secret for envFrom)
+  # NEXT_PUBLIC_LOGISTICS_API_URL: "https://logisticsapi.codevertexitsolutions.com"
+  # NEXT_PUBLIC_SSO_URL: "https://sso.codevertexitsolutions.com"

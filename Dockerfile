@@ -1,46 +1,52 @@
-# syntax=docker/dockerfile:1
+# Rider App - Next.js PWA (Delivery rider app)
+FROM node:20-alpine AS base
 
-FROM node:20-alpine AS deps
-WORKDIR /app
+FROM base AS deps
 RUN apk add --no-cache libc6-compat
-ENV PNPM_HOME="/root/.local/share/pnpm" \
-    PATH="$PNPM_HOME:$PATH"
-RUN corepack enable pnpm
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
-
-FROM node:20-alpine AS builder
 WORKDIR /app
-ENV PNPM_HOME="/root/.local/share/pnpm" \
-    PATH="$PNPM_HOME:$PATH"
-RUN corepack enable pnpm
+
+RUN npm install -g pnpm@10
+
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+RUN pnpm install --shamefully-hoist
+
+FROM base AS builder
+WORKDIR /app
+RUN npm install -g pnpm@10
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NEXT_PUBLIC_LOGISTICS_API_URL=https://logisticsapi.codevertexitsolutions.com
-ARG NEXT_PUBLIC_TENANT_SLUG=urban-loft
-ENV NEXT_PUBLIC_LOGISTICS_API_URL=$NEXT_PUBLIC_LOGISTICS_API_URL
-ENV NEXT_PUBLIC_TENANT_SLUG=$NEXT_PUBLIC_TENANT_SLUG
+# Build-time args for Next.js (baked into bundle)
+ARG NEXT_PUBLIC_LOGISTICS_API_URL
+ENV NEXT_PUBLIC_LOGISTICS_API_URL=${NEXT_PUBLIC_LOGISTICS_API_URL}
+ARG NEXT_PUBLIC_SSO_URL
+ENV NEXT_PUBLIC_SSO_URL=${NEXT_PUBLIC_SSO_URL}
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ARG NEXT_PUBLIC_TENANT_SLUG
+ENV NEXT_PUBLIC_TENANT_SLUG=${NEXT_PUBLIC_TENANT_SLUG}
 
 RUN pnpm build
 
-FROM node:20-alpine AS runner
+FROM base AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
-
-RUN mkdir .next
+RUN mkdir -p .next .next/static
 RUN chown nextjs:nodejs .next
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
+
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
 CMD ["node", "server.js"]
