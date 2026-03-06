@@ -2,7 +2,7 @@ name: Build and Deploy Rider App
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -130,6 +130,26 @@ jobs:
           echo "VALUES_FILE_PATH=apps/rider-app/values.yaml" >> $GITHUB_ENV
           echo "APP_NAME=rider-app" >> $GITHUB_ENV
 
+      - name: Verify secrets
+        if: needs.sync-secrets.outputs.result != 'synced'
+        run: |
+          echo "Verifying deployment secrets..."
+          FAIL=0
+          check_secret() { local name="$1" min_len="$2" value="$3"
+            if [[ -z "$value" ]]; then echo "❌ $name — empty"; FAIL=1
+            elif [[ ${#value} -lt $min_len ]]; then echo "⚠️  $name — ${#value} chars"; FAIL=1
+            else echo "✅ $name (${#value} chars)"; fi
+          }
+          check_secret "REGISTRY_USERNAME"  5 "$REGISTRY_USERNAME"
+          check_secret "REGISTRY_PASSWORD"  12 "$REGISTRY_PASSWORD"
+          check_secret "KUBE_CONFIG"        1000 "$KUBE_CONFIG"
+          if [[ $FAIL -eq 1 ]]; then echo ""; echo "❌ Secret verification failed"; exit 1; fi
+          echo ""; echo "✅ All secrets verified"
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
       - name: Run production deployment
         if: needs.sync-secrets.outputs.result != 'synced'
         env:
@@ -173,6 +193,7 @@ jobs:
         if: success() && needs.sync-secrets.outputs.result != 'synced'
         env:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG }}
+          NS: logistics
           APP_NAME: rider-app
         run: |
           if [ -z "${KUBE_CONFIG_B64}" ]; then

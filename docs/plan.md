@@ -48,11 +48,12 @@ Status updates → PUT /tasks/{id}/status → invalidates query cache
 
 ## K8s Deployment
 - **Namespace**: logistics
-- **Ingress**: `rider.codevertexitsolutions.com`
-- **Image**: `docker.io/codevertex/rider-app`
+- **Ingress**: `riderapp.codevertexitsolutions.com` (see devops-k8s/apps/rider-app/values.yaml)
+- **Image**: `docker.io/codevertex/rider-app` (tag from GIT_COMMIT_ID in CI)
 - **Resources**: 50m-250m CPU, 128Mi-512Mi memory
-- **Health**: HTTP GET `/` with readiness/liveness probes
+- **Health**: HTTP GET `/healthz` with readiness/liveness probes
 - **TLS**: Let's Encrypt via cert-manager
+- **DevOps alignment**: build.sh, Dockerfile, and .github/workflows/deploy.yml follow auth-ui/notifications-ui pattern (sync-secrets job, verify-secrets step, centralized devops-k8s values, NEXT_PUBLIC_* build-args).
 
 ---
 
