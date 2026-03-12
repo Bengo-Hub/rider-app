@@ -9,9 +9,8 @@ const SSO_BASE_URL =
   process.env.NEXT_PUBLIC_SSO_URL ?? "https://sso.codevertexitsolutions.com";
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID ?? "rider-app";
 
-// Logistics API for rider profile sync checks
-const LOGISTICS_API_URL =
-  process.env.NEXT_PUBLIC_LOGISTICS_API_URL ?? "http://localhost:4020/api/v1";
+/** SSO auth/me URL — profile must be fetched from auth-api (SSO), not from logistics-api. */
+export const SSO_ME_URL = `${SSO_BASE_URL}/api/v1/auth/me`;
 
 /**
  * Build the SSO authorize URL for OIDC Authorization Code + PKCE flow.
@@ -95,32 +94,41 @@ export async function exchangeCodeForTokens(params: {
 }
 
 /**
- * Fetch the current rider's profile from the logistics-api.
- * This confirms the user has been synced from SSO via NATS events.
+ * Fetch current user profile (roles, permissions, tenant) from SSO auth-api.
+ * Must call SSO, not logistics-api — logistics-api may not expose /riders/me or may 404.
+ * Returns a shape compatible with rider-app User (id, email, fullName, roles, tenants).
  */
 export async function fetchMe(accessToken: string) {
-  const tenantSlug =
-    typeof window !== "undefined" ? localStorage.getItem("tenantSlug") : null;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${accessToken}`,
-    ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
-  };
-
-  const response = await fetch(`${LOGISTICS_API_URL}/riders/me`, {
-    headers,
-    credentials: "include",
+  const response = await fetch(SSO_ME_URL, {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const err = new Error(body?.message ?? `API error ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+    const err = new Error(
+      body?.error_description ?? body?.error ?? `Profile failed: ${response.status}`
+    );
     (err as any).status = response.status;
     throw err;
   }
 
-  return response.json();
+  const data = await response.json();
+  const roles = Array.isArray(data.roles) ? data.roles : [];
+  const tenantId = data.tenant_id ?? "";
+  const tenantSlug = data.tenant_slug ?? "";
+
+  const user = {
+    id: data.id ?? data.sub ?? "",
+    email: data.email ?? "",
+    name: data.full_name ?? data.name ?? "",
+    fullName: data.full_name ?? data.name ?? "",
+    roles,
+    tenants: tenantId || tenantSlug
+      ? [{ id: tenantId, name: "", slug: tenantSlug, roles }]
+      : [],
+  };
+
+  return { user, ...data };
 }
 
 /**
