@@ -9,7 +9,15 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = "rider-app-pwa-install-dismissed";
-const RE_PROMPT_MS = 30 * 60 * 1000; // Re-prompt at least once every 30 min if not installed
+const RE_PROMPT_MS = 30 * 60 * 1000;
+
+function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone === true)
+  );
+}
 
 function wasDismissedRecently(): boolean {
   if (typeof window === "undefined") return false;
@@ -26,16 +34,23 @@ export function PWAInstallPrompt() {
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
+    if (isStandalone()) return;
+
     const handler = (e: Event) => {
       e.preventDefault();
       const ev = e as BeforeInstallPromptEvent;
       promptRef.current = ev;
       setDeferredPrompt(ev);
-      if (!wasDismissedRecently()) setShowBanner(true);
+      if (!wasDismissedRecently()) setTimeout(() => setShowBanner(true), 2000);
     };
     window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => {
+      setDeferredPrompt(null);
+      promptRef.current = null;
+      setShowBanner(false);
+    });
     const interval = setInterval(() => {
-      if (!wasDismissedRecently() && promptRef.current) setShowBanner(true);
+      if (!isStandalone() && !wasDismissedRecently() && promptRef.current) setShowBanner(true);
     }, RE_PROMPT_MS);
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
