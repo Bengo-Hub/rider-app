@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { OrgSlugProvider } from "@/providers/org-slug-provider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
@@ -11,8 +12,10 @@ export default async function OrgSlugLayout({
   const { orgSlug } = await params;
 
   return (
-    <OrgSlugProvider orgSlug={orgSlug}>
-      <ProtectedRoute>{children}</ProtectedRoute>
-    </OrgSlugProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <OrgSlugProvider orgSlug={orgSlug}>
+        <ProtectedRoute>{children}</ProtectedRoute>
+      </OrgSlugProvider>
+    </ThemeProvider>
   );
 }

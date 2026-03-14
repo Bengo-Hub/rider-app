@@ -6,10 +6,7 @@ const OrgSlugContext = createContext<string>("");
 
 export function useOrgSlug(): string {
   const slug = useContext(OrgSlugContext);
-  if (!slug) {
-    throw new Error("useOrgSlug must be used within an OrgSlugProvider");
-  }
-  return slug;
+  return slug || "";
 }
 
 export function OrgSlugProvider({

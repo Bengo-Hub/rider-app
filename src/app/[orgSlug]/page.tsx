@@ -8,11 +8,16 @@ import { useDeliveries } from "@/hooks/useDeliveries";
 import { useActiveDelivery } from "@/hooks/useActiveDelivery";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeliveryCard } from "@/components/delivery/delivery-card";
+import { useRouter } from "next/navigation";
 import { Package, Zap, DollarSign, Settings } from "lucide-react";
+import { useBrandConfig } from "@/hooks/useBrandConfig";
+import Image from "next/image";
 
 export default function RiderDashboard() {
   const orgSlug = useOrgSlug();
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const { data: brandConfig } = useBrandConfig();
 
   const { data: pendingTasks } = useDeliveries({
     tenantSlug: orgSlug,
@@ -35,17 +40,30 @@ export default function RiderDashboard() {
   const completedCount = completedToday?.data?.length ?? 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 pb-20">
+    <div className="flex min-h-screen flex-col bg-background pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-white px-4 py-3">
+      <header className="sticky top-0 z-40 border-b bg-card px-4 py-3">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">
-              Hi, {user?.name?.split(" ")[0] ?? "Rider"}
-            </h1>
-            <p className="text-xs text-gray-500">Ready to deliver</p>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+               <Image 
+                 src={brandConfig?.logoUrl || "/icons/rider-icon-192x192.png"} 
+                 alt={brandConfig?.name || "Rider App"} 
+                 width={24} 
+                 height={24} 
+                 className="rounded"
+               />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold">
+                {user?.name?.split(" ")[0] ?? "Rider"}
+              </h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                {brandConfig?.shortName || "Rider App"}
+              </p>
+            </div>
           </div>
-          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+          <span className="rounded-full bg-green-100 px-3 py-1 text-[10px] font-bold text-green-700 uppercase">
             Online
           </span>
         </div>
@@ -86,7 +104,7 @@ export default function RiderDashboard() {
         <div className="grid grid-cols-2 gap-3">
           <Link
             href={orgRoute(orgSlug, "/deliveries")}
-            className="flex items-center gap-3 rounded-xl border bg-white p-4 active:bg-gray-50"
+            className="flex items-center gap-3 rounded-xl border bg-card p-4 active:bg-accent"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
               <Package className="h-5 w-5 text-blue-600" />
@@ -100,7 +118,7 @@ export default function RiderDashboard() {
           </Link>
           <Link
             href={orgRoute(orgSlug, "/earnings")}
-            className="flex items-center gap-3 rounded-xl border bg-white p-4 active:bg-gray-50"
+            className="flex items-center gap-3 rounded-xl border bg-card p-4 active:bg-accent"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
               <DollarSign className="h-5 w-5 text-green-600" />
@@ -133,13 +151,13 @@ export default function RiderDashboard() {
                   key={task.id}
                   task={task}
                   onView={() => {
-                    window.location.href = orgRoute(orgSlug, "/deliveries");
+                    router.push(orgRoute(orgSlug, "/deliveries"));
                   }}
                 />
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border bg-white p-8 text-center">
+            <div className="rounded-xl border bg-card p-8 text-center">
               <Package className="mx-auto h-8 w-8 text-gray-300" />
               <p className="mt-2 text-sm text-gray-500">
                 No deliveries available right now

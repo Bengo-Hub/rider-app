@@ -11,6 +11,7 @@ import { orgRoute } from "@/lib/routes";
 import { useAuthStore } from "@/store/auth-store";
 import { api } from "@/lib/api";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 const vehicleTypes = [
   { value: "bike", label: "Motorbike", icon: Bike },
@@ -29,6 +30,10 @@ export default function ProfilePage() {
   const [licenseNo, setLicenseNo] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [idPassportAttachment, setIdPassportAttachment] = useState("");
+  const [riderPhoto, setRiderPhoto] = useState("");
+  const [imageLicensePlate, setImageLicensePlate] = useState("");
+  const [imageSideView, setImageSideView] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +48,11 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!idPassportAttachment || !riderPhoto || !imageLicensePlate || !imageSideView) {
+      toast.error("Please upload all required KYC documents");
+      return;
+    }
+
     setSaving(true);
     try {
       const result = await api.patch<{ user: typeof user }>("/riders/me/profile", {
@@ -51,6 +61,10 @@ export default function ProfilePage() {
         license_no: licenseNo.trim() || undefined,
         license_plate: licensePlate.trim() || undefined,
         id_number: idNumber.trim() || undefined,
+        id_passport_attachment: idPassportAttachment,
+        rider_photo: riderPhoto,
+        image_license_plate: imageLicensePlate,
+        image_side_view: imageSideView,
       });
 
       if (result.user) {
@@ -67,12 +81,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 pb-20">
-      <header className="sticky top-0 z-40 border-b bg-white px-4 py-3">
+    <div className="flex min-h-screen flex-col bg-background pb-20">
+      <header className="sticky top-0 z-40 border-b bg-card px-4 py-3">
         <div className="flex items-center gap-3">
           <Link
             href={orgRoute(orgSlug, "/settings")}
-            className="flex h-9 w-9 items-center justify-center rounded-lg active:bg-gray-100"
+            className="flex h-9 w-9 items-center justify-center rounded-lg active:bg-accent"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
@@ -83,10 +97,10 @@ export default function ProfilePage() {
       <main className="flex-1 p-4">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Contact Info */}
-          <section className="rounded-xl border bg-white p-4 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700">Contact Information</h2>
+          <section className="rounded-xl border bg-card p-4 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Contact Information</h2>
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-600 mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-muted-foreground mb-1">
                 Phone Number *
               </label>
               <input
@@ -100,7 +114,7 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label htmlFor="idNumber" className="block text-sm font-medium text-gray-600 mb-1">
+              <label htmlFor="idNumber" className="block text-sm font-medium text-muted-foreground mb-1">
                 National ID / Passport Number
               </label>
               <input
@@ -112,13 +126,28 @@ export default function ProfilePage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <ImageUpload
+                label="ID / Passport Copy"
+                value={idPassportAttachment}
+                onChange={setIdPassportAttachment}
+                required
+              />
+              <ImageUpload
+                label="Rider Passport Photo"
+                value={riderPhoto}
+                onChange={setRiderPhoto}
+                required
+              />
+            </div>
           </section>
 
           {/* Vehicle Info */}
-          <section className="rounded-xl border bg-white p-4 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700">Vehicle Details</h2>
+          <section className="rounded-xl border bg-card p-4 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Vehicle Details</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Vehicle Type *
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -132,8 +161,8 @@ export default function ProfilePage() {
                       onClick={() => setVehicleType(vt.value)}
                       className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm font-medium transition-colors ${
                         selected
-                          ? "border-orange-500 bg-orange-50 text-orange-700"
-                          : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-card text-muted-foreground hover:bg-accent"
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -144,7 +173,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div>
-              <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-600 mb-1">
+              <label htmlFor="licensePlate" className="block text-sm font-medium text-muted-foreground mb-1">
                 License Plate
               </label>
               <input
@@ -157,7 +186,7 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label htmlFor="licenseNo" className="block text-sm font-medium text-gray-600 mb-1">
+              <label htmlFor="licenseNo" className="block text-sm font-medium text-muted-foreground mb-1">
                 Driving License Number
               </label>
               <input
@@ -167,6 +196,21 @@ export default function ProfilePage() {
                 onChange={(e) => setLicenseNo(e.target.value)}
                 placeholder="e.g., DL-12345"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <ImageUpload
+                label="Vehicle (License Plate)"
+                value={imageLicensePlate}
+                onChange={setImageLicensePlate}
+                required
+              />
+              <ImageUpload
+                label="Vehicle (Side View)"
+                value={imageSideView}
+                onChange={setImageSideView}
+                required
               />
             </div>
           </section>

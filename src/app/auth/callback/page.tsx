@@ -21,7 +21,9 @@ function AuthCallbackContent() {
     if (oauthError || !code || hasStarted.current) return;
     hasStarted.current = true;
 
-    const callbackUrl = `${window.location.origin}${window.location.pathname}`;
+    const callbackUrl = typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}`
+      : "";
     void handleSSOCallback(code, callbackUrl);
   }, [code, oauthError, handleSSOCallback]);
 

@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="100" fill="#f36a0c"/>
+  <circle cx="256" cy="256" r="200" fill="white" fill-opacity="0.1"/>
+  <!-- Stylized V with Checkmark tail (Codevertex Style) -->
+  <path d="M150 200L250 380L420 100" stroke="white" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Rider/Motion lines -->
+  <path d="M80 220L120 220" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <path d="M60 260L100 260" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <path d="M80 300L120 300" stroke="white" stroke-width="20" stroke-linecap="round"/>
+</svg>

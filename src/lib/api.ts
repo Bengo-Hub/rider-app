@@ -17,14 +17,29 @@ async function request<T>(
       : null;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(options?.body instanceof FormData
+      ? {}
+      : { "Content-Type": "application/json" }),
     ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
     ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((options?.headers as Record<string, string>) ?? {}),
   };
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  // Extract org slug from URL if not in localStorage
+  let effectiveSlug = tenantSlug;
+  if (!effectiveSlug && typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/");
+    if (parts.length > 2 && parts[1] !== "api") {
+      effectiveSlug = parts[1];
+    }
+  }
+
+  const finalPath = effectiveSlug && !path.startsWith(`/${effectiveSlug}`) 
+    ? `/${effectiveSlug}${path}` 
+    : path;
+
+  const res = await fetch(`${API_BASE}${finalPath}`, {
     ...options,
     headers,
     credentials: "include",
@@ -47,4 +62,10 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, formData: FormData) =>
+    request<T>(path, {
+      method: "POST",
+      body: formData,
+      headers: {}, // Let fetch set Content-Type with boundary
+    }),
 };

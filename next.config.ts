@@ -10,6 +10,8 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   output: "standalone",
   reactCompiler: true,
+  // @ts-ignore - Required for Turbopack in Next.js 16 (per CLI instruction)
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);

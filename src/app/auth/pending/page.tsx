@@ -25,7 +25,7 @@ export default function AuthPendingPage() {
 
         if (u.status !== "pending" && u.status !== "pending_review") {
           const orgSlug =
-            localStorage.getItem("tenantSlug") ??
+            (typeof window !== "undefined" ? localStorage.getItem("tenantSlug") : null) ??
             process.env.NEXT_PUBLIC_TENANT_SLUG ??
             "urban-loft";
           router.replace(`/${orgSlug}/profile`);
@@ -38,8 +38,13 @@ export default function AuthPendingPage() {
     return () => clearInterval(interval);
   }, [accessToken, setUser, router]);
 
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login");
+    }
+  }, [user, router]);
+
   if (!user) {
-    router.replace("/login");
     return null;
   }
 
@@ -67,7 +72,9 @@ export default function AuthPendingPage() {
 
       <div className="flex gap-3">
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            if (typeof window !== "undefined") window.location.reload();
+          }}
           className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
         >
           <RefreshCw className="size-4" />

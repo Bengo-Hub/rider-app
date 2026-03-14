@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
+import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
   description:
     "Manage deliveries, track routes, and earn with Urban Loft Cafe",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icons/rider-icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -41,9 +46,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          {children}
+          <PWAInstallPrompt />
+        </AppProviders>
       </body>
     </html>
   );
