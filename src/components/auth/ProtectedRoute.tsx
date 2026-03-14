@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth-store";
 import { useEffect, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { AccessModal } from "./AccessModal";
 
 interface ProtectedRouteProps {
@@ -12,6 +13,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const { user, redirectToSSO } = useAuthStore();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -31,9 +33,16 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated) return null;
 
+  // Allow access to the profile page even if unapproved or non-rider
+  // This allows users to complete their registration/KYC
+  const isProfilePage = pathname?.endsWith("/profile") || pathname?.includes("/profile/");
+  if (isProfilePage) {
+    return <>{children}</>;
+  }
+
   // Gating Logic
   const hasRiderRole = user?.roles?.includes("rider");
-  const isApproved = user?.status === "active" || user?.status === "approved";
+  const isApproved = user?.status === "active" || user?.status === "approved" || user?.status === "onboarding";
   const isPlatformAdmin = user?.roles?.includes("admin") || user?.roles?.includes("superuser");
 
   // Platform admins get a pass
