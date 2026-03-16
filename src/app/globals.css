@@ -2,55 +2,55 @@
 
 @layer base {
   :root {
-    /* Codevertex Theme - Standardized across services */
-    --background: 48 100% 96%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* Codevertex Theme - Premium Rider App */
+    --background: 24 33% 97%;
+    --foreground: 224 71% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 224 71% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 224 71% 4%;
 
-    /* Primary - Hot Pink (Brand Color) */
-    --primary: 330 81% 60%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Vibrant Orange-Pink (Rider Platform) */
+    --primary: 15 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 16% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 16% 96%;
-    --muted-foreground: 215 20% 47%;
-    --accent: 210 16% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 24 33% 92%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 24 33% 92%;
+    --muted-foreground: 224 8% 45%;
+    --accent: 24 33% 92%;
+    --accent-foreground: 224 71% 4%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 330 81% 60%;
-    --radius: 0.5rem;
+    --border: 24 33% 88%;
+    --input: 24 33% 88%;
+    --ring: 15 100% 50%;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 224 71% 4%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 224 71% 7%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 224 71% 7%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary - Sky Blue for dark mode (better visibility) */
-    --primary: 210 100% 66%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary - Vibrant Orange for dark mode */
+    --primary: 15 100% 60%;
+    --primary-foreground: 224 71% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 224 71% 12%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 224 71% 12%;
+    --muted-foreground: 215 20% 75%;
+    --accent: 224 71% 12%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 210 100% 66%;
+    --border: 224 71% 15%;
+    --input: 224 71% 15%;
+    --ring: 15 100% 60%;
   }
 }
 

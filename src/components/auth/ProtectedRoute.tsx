@@ -35,7 +35,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Allow access to the profile page even if unapproved or non-rider
   // This allows users to complete their registration/KYC
-  const isProfilePage = pathname?.endsWith("/profile") || pathname?.includes("/profile/");
+  const isProfilePage = pathname?.includes("/profile");
   if (isProfilePage) {
     return <>{children}</>;
   }
