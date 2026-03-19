@@ -15,6 +15,7 @@ import {
   storeVerifier,
   consumeVerifier,
 } from "@/lib/auth/pkce";
+import { checkSubscription } from "@/lib/auth/subscription";
 
 export interface UserTenant {
   id: string;
@@ -34,7 +35,7 @@ export interface User {
   status?: string;
 }
 
-type AuthStatus = "idle" | "loading" | "syncing" | "authenticated" | "error";
+type AuthStatus = "idle" | "loading" | "syncing" | "authenticated" | "error" | "subscription_required";
 
 interface AuthState {
   user: User | null;
@@ -138,6 +139,16 @@ export const useAuthStore = create<AuthState>()(
             try {
               const profile = await fetchMe(accessToken);
               const user: User = profile.user ?? profile;
+
+              // Subscription enforcement: check active subscription for non-platform-owner tenants
+              const primaryTenant = user.tenants?.[0];
+              if (primaryTenant && primaryTenant.slug !== 'codevertex') {
+                const active = await checkSubscription(primaryTenant.id, primaryTenant.slug, accessToken);
+                if (!active) {
+                  set({ status: 'subscription_required', isLoading: false });
+                  return;
+                }
+              }
 
               set({
                 user,
