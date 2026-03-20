@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { Task, TaskStatus } from "@/types/logistics";
 import { STATUS_LABELS, NEXT_STATUS } from "@/types/logistics";
 import { StatusBadge } from "./status-badge";
 import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X } from "lucide-react";
+
+const DeliveryMap = dynamic(
+  () => import("@/components/map/delivery-map").then((m) => ({ default: m.DeliveryMap })),
+  { ssr: false, loading: () => <div className="h-48 w-full animate-pulse rounded-xl bg-gray-200" /> }
+);
 
 export interface ProofOfDelivery {
   delivery_code?: string;
@@ -22,6 +28,14 @@ interface ActiveDeliveryViewProps {
   onSubmitProof?: (taskId: string, proof: ProofOfDelivery) => void;
   advancing?: boolean;
   submittingProof?: boolean;
+  /** Rider's current GPS latitude */
+  riderLat?: number | null;
+  /** Rider's current GPS longitude */
+  riderLng?: number | null;
+  /** Rider's heading in degrees */
+  riderHeading?: number | null;
+  /** Route coordinates from routing API [lng, lat][] */
+  routeCoordinates?: [number, number][];
 }
 
 const STEP_ORDER: TaskStatus[] = [
@@ -40,6 +54,10 @@ export function ActiveDeliveryView({
   onSubmitProof,
   advancing,
   submittingProof,
+  riderLat,
+  riderLng,
+  riderHeading,
+  routeCoordinates,
 }: ActiveDeliveryViewProps) {
   const nextStatus = NEXT_STATUS[task.status];
   const currentStepIdx = STEP_ORDER.indexOf(task.status);
@@ -84,6 +102,23 @@ export function ActiveDeliveryView({
           ))}
         </div>
       </div>
+
+      {/* Delivery Map */}
+      <DeliveryMap
+        riderLat={riderLat ?? null}
+        riderLng={riderLng ?? null}
+        riderHeading={riderHeading ?? null}
+        pickupLat={task.pickup_latitude}
+        pickupLng={task.pickup_longitude}
+        pickupLabel={task.pickup_address || "Pickup"}
+        dropoffLat={task.dropoff_latitude}
+        dropoffLng={task.dropoff_longitude}
+        dropoffLabel={task.dropoff_address || "Dropoff"}
+        isPickupPhase={isPickupPhase}
+        etaMinutes={task.eta_minutes}
+        distanceKm={task.distance_km}
+        routeCoordinates={routeCoordinates}
+      />
 
       {/* Location Cards */}
       <div className="space-y-3">

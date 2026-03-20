@@ -23,7 +23,7 @@ export default function ActiveDeliveryPage() {
     riderId: user?.id,
   });
 
-  useLocationTracking({
+  const gps = useLocationTracking({
     tenantSlug: orgSlug,
     enabled: !!activeTask,
   });
@@ -102,6 +102,9 @@ export default function ActiveDeliveryPage() {
             onSubmitProof={handleSubmitProof}
             advancing={statusMutation.isPending}
             submittingProof={proofMutation.isPending}
+            riderLat={gps.latitude}
+            riderLng={gps.longitude}
+            riderHeading={gps.heading}
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">

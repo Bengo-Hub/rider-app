@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { api } from "@/lib/api";
 
 interface LocationTrackingOptions {
   tenantSlug: string;
   enabled: boolean;
   intervalMs?: number;
+}
+
+interface LocationState {
+  latitude: number | null;
+  longitude: number | null;
+  heading: number | null;
+  speed: number | null;
+  accuracy: number | null;
 }
 
 export function useLocationTracking({
@@ -16,20 +24,37 @@ export function useLocationTracking({
 }: LocationTrackingOptions) {
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
+  const [position, setPosition] = useState<LocationState>({
+    latitude: null,
+    longitude: null,
+    heading: null,
+    speed: null,
+    accuracy: null,
+  });
 
   const sendLocation = useCallback(
-    async (position: GeolocationPosition) => {
+    async (pos: GeolocationPosition) => {
+      // Always update local state for map rendering
+      setPosition({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        heading: pos.coords.heading,
+        speed: pos.coords.speed,
+        accuracy: pos.coords.accuracy,
+      });
+
+      // Throttle API calls
       const now = Date.now();
       if (now - lastSentRef.current < intervalMs) return;
       lastSentRef.current = now;
 
       try {
         await api.post(`/${tenantSlug}/tracking/rider/location`, {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          heading: position.coords.heading,
-          speed: position.coords.speed,
-          accuracy: position.coords.accuracy,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          heading: pos.coords.heading,
+          speed: pos.coords.speed,
+          accuracy: pos.coords.accuracy,
         });
       } catch {
         // Silently fail — location updates are best-effort
@@ -60,4 +85,6 @@ export function useLocationTracking({
       }
     };
   }, [enabled, sendLocation]);
+
+  return position;
 }
