@@ -112,9 +112,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 **Service Worker Implementation**:
 ```typescript
-// Cache map tiles for offline viewing
+// Cache map tiles for offline viewing (self-hosted TileServer-GL)
 registerRoute(
-  ({ url }) => url.origin === 'https://api.mapbox.com',
+  ({ url }) => url.origin === 'https://tiles.codevertexitsolutions.com',
   new CacheFirst({
     cacheName: 'map-tiles-cache',
     plugins: [
@@ -378,7 +378,7 @@ const syncQueuedLocationUpdates = async () => {
 - One-handed operation (bottom action buttons)
 - Clear status indicators (task status, earnings)
 - Fast task acceptance/rejection
-- Quick access to navigation (Google Maps/Apple Maps)
+- Quick access to navigation (self-hosted Valhalla routing via logistics-api, rendered with @bengo-hub/maps / MapLibre GL JS)
 
 **Performance Targets**:
 - Task acceptance: < 2 seconds
