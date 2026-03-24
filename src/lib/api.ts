@@ -1,6 +1,13 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_LOGISTICS_API_URL ?? "http://localhost:4020/api/v1";
 
+let on401Callback: (() => void) | null = null;
+
+/** Register a callback to run when any API response is 401 (e.g. clear session / redirect to auth). */
+export function setOn401(callback: (() => void) | null) {
+  on401Callback = callback;
+}
+
 async function request<T>(
   path: string,
   options?: RequestInit,
@@ -46,6 +53,9 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    if (res.status === 401 && on401Callback) {
+      on401Callback();
+    }
     const body = await res.json().catch(() => null);
     throw new Error(body?.message ?? `API error ${res.status}`);
   }

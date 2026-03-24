@@ -197,6 +197,11 @@ export const useAuthStore = create<AuthState>()(
           status: "idle",
           error: null,
         });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("rider-auth-storage");
+          localStorage.removeItem("tenantId");
+          localStorage.removeItem("tenantSlug");
+        }
         logoutRedirect();
       },
     }),

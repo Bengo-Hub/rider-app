@@ -62,7 +62,7 @@ export function useBrandConfig() {
       }
     },
     enabled: !!slug,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 6 * 60 * 60 * 1000, // 6 hours — aligned with JWT TTL
     retry: false,
   });
 }
