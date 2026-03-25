@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useActiveDelivery } from "@/hooks/useActiveDelivery";
 import { useUpdateTaskStatus, useCancelTask, useSubmitProof } from "@/hooks/useTaskMutations";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
+import { useDeliveryRoute } from "@/hooks/use-delivery-route";
 import { ActiveDeliveryView } from "@/components/delivery/active-delivery-view";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { toast } from "sonner";
@@ -26,6 +27,37 @@ export default function ActiveDeliveryPage() {
   const gps = useLocationTracking({
     tenantSlug: orgSlug,
     enabled: !!activeTask,
+  });
+
+  const isPickupPhase = activeTask
+    ? ["accepted", "en_route_pickup", "arrived_pickup"].includes(activeTask.status)
+    : true;
+
+  const routeDestLat = activeTask
+    ? isPickupPhase
+      ? activeTask.pickup_latitude
+      : activeTask.dropoff_latitude
+    : null;
+
+  const routeDestLng = activeTask
+    ? isPickupPhase
+      ? activeTask.pickup_longitude
+      : activeTask.dropoff_longitude
+    : null;
+
+  const route = useDeliveryRoute({
+    fromLat: gps.latitude ?? 0,
+    fromLng: gps.longitude ?? 0,
+    toLat: routeDestLat ?? 0,
+    toLng: routeDestLng ?? 0,
+    taskId: activeTask?.id ?? "",
+    phase: isPickupPhase ? "pickup" : "dropoff",
+    enabled:
+      !!activeTask &&
+      !!gps.latitude &&
+      !!gps.longitude &&
+      !!routeDestLat &&
+      !!routeDestLng,
   });
 
   const statusMutation = useUpdateTaskStatus(orgSlug);
@@ -105,6 +137,10 @@ export default function ActiveDeliveryPage() {
             riderLat={gps.latitude}
             riderLng={gps.longitude}
             riderHeading={gps.heading}
+            routeCoordinates={route.coordinates ?? undefined}
+            routeDistanceKm={route.distanceKm}
+            routeDurationMinutes={route.durationMinutes}
+            routeIsFromCache={route.isFromCache}
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
