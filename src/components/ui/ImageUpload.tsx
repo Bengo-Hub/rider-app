@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, Loader2, Upload, X } from "lucide-react";
+import { Camera, FileText, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
@@ -69,13 +69,20 @@ export function ImageUpload({ label, value, onChange, required }: ImageUploadPro
           </div>
         ) : value ? (
           <>
-            <img 
-              src={value} 
-              alt={label} 
-              className="absolute inset-0 h-full w-full rounded-lg object-cover"
-            />
+            {value.endsWith(".pdf") || value.includes("application/pdf") ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-4">
+                <FileText className="h-12 w-12 text-red-500" />
+                <span className="text-xs font-medium text-muted-foreground">PDF Document</span>
+              </div>
+            ) : (
+              <img
+                src={value}
+                alt={label}
+                className="absolute inset-0 h-full w-full rounded-lg object-cover"
+              />
+            )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100 rounded-lg">
-              <span className="text-xs font-semibold text-white">Change Image</span>
+              <span className="text-xs font-semibold text-white">Change File</span>
             </div>
             <button
               onClick={handleClear}
@@ -91,7 +98,7 @@ export function ImageUpload({ label, value, onChange, required }: ImageUploadPro
             </div>
             <div>
               <p className="text-sm font-medium">Take a photo or upload</p>
-              <p className="text-xs text-muted-foreground">JPG, PNG, WEBP up to 5MB</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG, WEBP, PDF up to 5MB</p>
             </div>
           </div>
         )}
@@ -99,7 +106,7 @@ export function ImageUpload({ label, value, onChange, required }: ImageUploadPro
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           className="hidden"
           onChange={handleFileChange}
           disabled={uploading}

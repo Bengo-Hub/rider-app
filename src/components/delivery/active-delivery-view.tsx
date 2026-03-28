@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { Task, TaskStatus } from "@/types/logistics";
 import { STATUS_LABELS, NEXT_STATUS } from "@/types/logistics";
 import { StatusBadge } from "./status-badge";
-import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X } from "lucide-react";
+import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X, WifiOff } from "lucide-react";
 
 const DeliveryMap = dynamic(
   () => import("@/components/map/delivery-map").then((m) => ({ default: m.DeliveryMap })),
@@ -36,6 +36,12 @@ interface ActiveDeliveryViewProps {
   riderHeading?: number | null;
   /** Route coordinates from routing API [lng, lat][] */
   routeCoordinates?: [number, number][];
+  /** Route distance in km from routing API */
+  routeDistanceKm?: number;
+  /** Route duration in minutes from routing API */
+  routeDurationMinutes?: number;
+  /** Whether route data comes from offline cache */
+  routeIsFromCache?: boolean;
 }
 
 const STEP_ORDER: TaskStatus[] = [
@@ -58,6 +64,9 @@ export function ActiveDeliveryView({
   riderLng,
   riderHeading,
   routeCoordinates,
+  routeDistanceKm,
+  routeDurationMinutes,
+  routeIsFromCache,
 }: ActiveDeliveryViewProps) {
   const nextStatus = NEXT_STATUS[task.status];
   const currentStepIdx = STEP_ORDER.indexOf(task.status);
@@ -115,10 +124,18 @@ export function ActiveDeliveryView({
         dropoffLng={task.dropoff_longitude}
         dropoffLabel={task.dropoff_address || "Dropoff"}
         isPickupPhase={isPickupPhase}
-        etaMinutes={task.eta_minutes}
-        distanceKm={task.distance_km}
+        etaMinutes={routeDurationMinutes ?? task.eta_minutes}
+        distanceKm={routeDistanceKm ?? task.distance_km}
         routeCoordinates={routeCoordinates}
       />
+
+      {/* Offline route indicator */}
+      {routeIsFromCache && (
+        <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-medium text-amber-700">
+          <WifiOff className="h-3.5 w-3.5 shrink-0" />
+          <span>Using cached route</span>
+        </div>
+      )}
 
       {/* Location Cards */}
       <div className="space-y-3">
