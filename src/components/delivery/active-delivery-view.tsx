@@ -19,6 +19,8 @@ export interface ProofOfDelivery {
   notes?: string;
   latitude?: number;
   longitude?: number;
+  amount_collected?: number;
+  collection_method?: string;
 }
 
 interface ActiveDeliveryViewProps {
@@ -86,9 +88,26 @@ export function ActiveDeliveryView({
   };
 
   const isPickupPhase = ["accepted", "en_route_pickup", "arrived_pickup"].includes(task.status);
+  const codAmount = (task.metadata?.cash_on_delivery as number) ?? 0;
+  const isCOD = codAmount > 0;
 
   return (
     <div className="space-y-4">
+      {/* COD Banner */}
+      {isCOD && (
+        <div className="flex items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+            COD
+          </div>
+          <div>
+            <p className="text-sm font-bold text-amber-900">Cash on Delivery</p>
+            <p className="text-lg font-bold text-amber-800">
+              KES {codAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Status Header */}
       <div className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 p-4 text-white">
         <div className="flex items-center justify-between">
@@ -348,6 +367,30 @@ export function ActiveDeliveryView({
                 />
               )}
             </div>
+
+            {/* COD Amount Collected */}
+            {isCOD && (
+              <div>
+                <label className="block text-xs font-semibold uppercase text-amber-700 mb-1">
+                  Cash Collected (KES) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">KES</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min={codAmount}
+                    value={proofData.amount_collected ?? codAmount}
+                    onChange={(e) => setProofData((p) => ({ ...p, amount_collected: parseFloat(e.target.value) || 0 }))}
+                    className="w-full rounded-xl border-2 border-amber-300 bg-amber-50 pl-14 pr-4 py-3 text-lg font-bold text-amber-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-amber-600">
+                  Required amount: KES {codAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            )}
 
             {/* Notes */}
             <div>
