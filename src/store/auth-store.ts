@@ -15,7 +15,6 @@ import {
   storeVerifier,
   consumeVerifier,
 } from "@/lib/auth/pkce";
-import { checkSubscription } from "@/lib/auth/subscription";
 
 export interface UserTenant {
   id: string;
@@ -45,6 +44,7 @@ interface AuthState {
   isLoading: boolean;
   status: AuthStatus;
   error: string | null;
+  lastAuthenticatedAt: number | null;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -65,6 +65,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       status: "idle" as AuthStatus,
       error: null,
+      lastAuthenticatedAt: null,
 
       setUser: (user) =>
         set({
@@ -140,22 +141,13 @@ export const useAuthStore = create<AuthState>()(
               const profile = await fetchMe(accessToken);
               const user: User = profile.user ?? profile;
 
-              // Subscription enforcement: check active subscription for non-platform-owner tenants
-              const primaryTenant = user.tenants?.[0];
-              if (primaryTenant && primaryTenant.slug !== 'codevertex') {
-                const active = await checkSubscription(primaryTenant.id, primaryTenant.slug, accessToken);
-                if (!active) {
-                  set({ status: 'subscription_required', isLoading: false });
-                  return;
-                }
-              }
-
               set({
                 user,
                 isAuthenticated: true,
                 isLoading: false,
                 status: "authenticated",
                 error: null,
+                lastAuthenticatedAt: Date.now(),
               });
               return;
             } catch (err: any) {
@@ -196,11 +188,13 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
           status: "idle",
           error: null,
+          lastAuthenticatedAt: null,
         });
         if (typeof window !== "undefined") {
-          localStorage.removeItem("rider-auth-storage");
-          localStorage.removeItem("tenantId");
-          localStorage.removeItem("tenantSlug");
+          try { localStorage.removeItem("rider-auth-storage"); } catch { /* no-op */ }
+          try { localStorage.removeItem("tenantId"); } catch { /* no-op */ }
+          try { localStorage.removeItem("tenantSlug"); } catch { /* no-op */ }
+          try { sessionStorage.clear(); } catch { /* no-op */ }
         }
         logoutRedirect();
       },
