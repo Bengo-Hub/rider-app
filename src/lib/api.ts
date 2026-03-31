@@ -53,8 +53,30 @@ async function request<T>(
   });
 
   if (!res.ok) {
-    if (res.status === 401 && on401Callback) {
-      on401Callback();
+    if (res.status === 401) {
+      // Skip auto-logout for /auth/me — may 401 before JIT sync completes
+      if (!path.includes("/auth/me")) {
+        // Attempt token refresh before triggering logout
+        const { refreshAccessToken } = await import("@/lib/token-refresh");
+        const newToken = await refreshAccessToken();
+
+        if (newToken) {
+          // Retry with refreshed token
+          headers.Authorization = `Bearer ${newToken}`;
+          const retryRes = await fetch(`${API_BASE}${finalPath}`, {
+            ...options,
+            headers,
+            credentials: "include",
+          });
+          if (retryRes.ok) return retryRes.json();
+          if (retryRes.status === 401 && on401Callback) on401Callback();
+          const retryBody = await retryRes.json().catch(() => null);
+          throw new Error(retryBody?.message ?? `API error ${retryRes.status}`);
+        }
+
+        // Refresh failed — fire logout callback
+        if (on401Callback) on401Callback();
+      }
     }
     const body = await res.json().catch(() => null);
     throw new Error(body?.message ?? `API error ${res.status}`);
