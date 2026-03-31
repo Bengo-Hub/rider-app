@@ -54,9 +54,13 @@ async function request<T>(
 
   if (!res.ok) {
     if (res.status === 401) {
+      // If token is already cleared (explicit logout in progress), skip entirely
+      if (!token) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message ?? `API error ${res.status}`);
+      }
       // Skip auto-logout for /auth/me — may 401 before JIT sync completes
       if (!path.includes("/auth/me")) {
-        // Attempt token refresh before triggering logout
         const { refreshAccessToken } = await import("@/lib/token-refresh");
         const newToken = await refreshAccessToken();
 
