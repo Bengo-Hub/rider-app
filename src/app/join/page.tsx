@@ -90,14 +90,18 @@ function JoinPageContent() {
           <span className="text-xl font-bold tracking-tight">BengoBox Rider</span>
         </div>
         <h1 className="text-2xl font-extrabold leading-tight">
-          You&apos;ve been invited to join as a rider
+          {inviteCode
+            ? "You\u2019ve been invited to join as a rider"
+            : "Sign Up to Deliver"}
         </h1>
         <p className="mt-2 text-sm text-orange-100">
-          Deliver orders for{" "}
+          {inviteCode ? "Deliver orders for " : "Join the "}
           <span className="font-semibold text-white capitalize">
             {orgSlug.replace(/-/g, " ")}
-          </span>{" "}
-          and earn on your schedule.
+          </span>
+          {inviteCode
+            ? " and earn on your schedule."
+            : " delivery fleet. Earn money on your own schedule."}
         </p>
       </header>
 
@@ -154,7 +158,7 @@ function JoinPageContent() {
               Redirecting to sign up...
             </>
           ) : (
-            "Accept Invitation & Sign Up"
+            inviteCode ? "Accept Invitation & Sign Up" : "Sign Up & Start Delivering"
           )}
         </button>
         <p className="text-center text-xs text-gray-400">
