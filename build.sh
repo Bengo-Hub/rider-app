@@ -44,7 +44,7 @@ fi
 KUBE_CONFIG=${KUBE_CONFIG:-${KUBE_CONFIG_B64:-}}
 
 # Build-time env for Next.js (baked into bundle)
-NEXT_PUBLIC_LOGISTICS_API_URL=${NEXT_PUBLIC_LOGISTICS_API_URL:-"https://logisticsapi.codevertexitsolutions.com"}
+NEXT_PUBLIC_LOGISTICS_API_URL=${NEXT_PUBLIC_LOGISTICS_API_URL:-"https://logisticsapi.codevertexitsolutions.com/api/v1"}
 NEXT_PUBLIC_SSO_URL=${NEXT_PUBLIC_SSO_URL:-"https://sso.codevertexitsolutions.com"}
 NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-"https://riderapp.codevertexitsolutions.com"}
 NEXT_PUBLIC_TENANT_SLUG=${NEXT_PUBLIC_TENANT_SLUG:-"urban-loft"}
