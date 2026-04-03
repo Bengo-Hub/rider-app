@@ -58,3 +58,4 @@ public/sw.js
 *-key.pem
 KubeSecrets/
 kubeSecrets/
+.env.test
