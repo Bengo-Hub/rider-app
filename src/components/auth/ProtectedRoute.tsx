@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth-store";
+import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AccessModal } from "./AccessModal";
@@ -15,14 +16,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const { user, redirectToSSO } = useAuthStore();
   const pathname = usePathname();
+  const orgSlug = useOrgSlug();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Redirect to SSO login, storing current path as return URL
+      // Redirect to SSO login with the correct tenant slug
       const path = typeof window !== "undefined" ? window.location.pathname : "";
-      void redirectToSSO(path);
+      void redirectToSSO(path, orgSlug);
     }
-  }, [isLoading, isAuthenticated, redirectToSSO]);
+  }, [isLoading, isAuthenticated, redirectToSSO, orgSlug]);
 
   if (isLoading) {
     return (
