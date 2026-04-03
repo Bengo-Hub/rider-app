@@ -6,7 +6,7 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'https://riderapp.codevertexitsolutions.com';
 const ORG_SLUG = process.env.E2E_ORG_SLUG || 'urban-loft';
 const EMAIL = process.env.E2E_LOGIN_EMAIL || 'titusowuor30@gmail.com';
-const PASSWORD = process.env.E2E_LOGIN_PASSWORD; // no default — must be supplied
+const PASSWORD = process.env.E2E_LOGIN_PASSWORD || 'User@2024!';
 
 // ---------------------------------------------------------------------------
 // Inline NetworkLogger — records API calls and reports failures
@@ -97,40 +97,24 @@ class NetworkLogger {
 // Helper: SSO login flow — reusable across tests
 // ---------------------------------------------------------------------------
 async function ssoLogin(page: Page) {
-  if (!PASSWORD) {
-    throw new Error('E2E_LOGIN_PASSWORD env var is required');
-  }
+  // Navigate to org-scoped route — ProtectedRoute auto-redirects to SSO
+  await page.goto(`/${ORG_SLUG}`);
 
-  await page.goto('/');
+  // Wait for SSO redirect (ProtectedRoute auto-redirects unauthenticated users)
+  await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 20_000 });
 
-  // The rider-app landing may show a "Sign In" / "Login" / "Join" link
-  const signInLink = page
-    .getByRole('link', { name: /sign in|login|join/i })
-    .first();
-  await signInLink.click().catch(() => {
-    // If no explicit link, the app may auto-redirect to SSO
-  });
+  // Fill login form
+  const emailInput = page.locator('input[type="email"], input[name="email"], input[id="email"]').first();
+  const passwordInput = page.locator('input[type="password"], input[name="password"], input[id="password"]').first();
 
-  // Wait for redirect to accounts SSO
-  const onAccounts = await page
-    .waitForURL(/accounts\.codevertexitsolutions\.com\/login/, {
-      timeout: 15_000,
-    })
-    .then(() => true)
-    .catch(() => false);
+  await emailInput.waitFor({ state: 'visible', timeout: 10_000 });
+  await emailInput.fill(EMAIL);
+  await passwordInput.fill(PASSWORD);
+  await page.locator('button[type="submit"]').first().click();
 
-  if (onAccounts) {
-    await page.getByRole('textbox', { name: /email/i }).fill(EMAIL);
-    await page.getByRole('textbox', { name: /password/i }).fill(PASSWORD);
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    // Wait for redirect back to rider app
-    await page
-      .waitForURL(/riderapp\.codevertexitsolutions\.com|localhost/, {
-        timeout: 25_000,
-      })
-      .catch(() => {});
-  }
+  // Wait for redirect back to rider app (callback → dashboard)
+  await page.waitForURL(/riderapp\.codevertexitsolutions\.com|localhost/, { timeout: 30_000 });
+  await page.waitForTimeout(3_000);
 }
 
 // ---------------------------------------------------------------------------

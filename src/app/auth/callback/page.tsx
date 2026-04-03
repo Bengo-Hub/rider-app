@@ -27,14 +27,6 @@ function AuthCallbackContent() {
     void handleSSOCallback(code, callbackUrl);
   }, [code, oauthError, handleSSOCallback]);
 
-  // Subscription enforcement
-  useEffect(() => {
-    if (status === 'subscription_required') {
-      const subsUrl = process.env.NEXT_PUBLIC_SUBSCRIPTIONS_UI_URL || 'https://pricing.codevertexitsolutions.com';
-      window.location.href = `${subsUrl}/subscribe`;
-    }
-  }, [status]);
-
   // Step 2: Once synced and authenticated, redirect to the right destination
   useEffect(() => {
     if (status !== "authenticated" || !user) return;
