@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AccessModal } from "./AccessModal";
+import { PendingReviewBanner } from "./PendingReviewBanner";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -43,12 +44,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Gating Logic
   const hasRiderRole = user?.roles?.includes("rider");
   const isApproved = user?.status === "active" || user?.status === "approved" || user?.status === "onboarding";
+  const isPendingReview = user?.status === "pending_review";
   const isPlatformAdmin = user?.roles?.includes("admin") || user?.roles?.includes("superuser");
 
   // Platform admins get a pass
   if (isPlatformAdmin) return <>{children}</>;
 
-  // Non-riders or unapproved riders see the modal
+  // Non-riders see the registration modal
   if (!hasRiderRole) {
     return (
       <div className="relative min-h-screen">
@@ -60,6 +62,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // Riders who submitted KYC (pending_review) see a non-blocking banner
+  if (isPendingReview) {
+    return (
+      <>
+        <PendingReviewBanner />
+        {children}
+      </>
+    );
+  }
+
+  // Riders who haven't submitted KYC yet (pending) see the blocking modal
   if (!isApproved) {
     return (
       <div className="relative min-h-screen">
