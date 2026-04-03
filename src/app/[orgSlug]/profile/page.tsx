@@ -71,8 +71,8 @@ export default function ProfilePage() {
         setUser(result.user);
       }
 
-      toast.success("Profile updated successfully");
-      router.push(orgRoute(orgSlug, "/settings"));
+      toast.success("Profile updated successfully. Your application is now under review.");
+      router.push(orgRoute(orgSlug, "/"));
     } catch {
       toast.error("Failed to update profile. Please try again.");
     } finally {
