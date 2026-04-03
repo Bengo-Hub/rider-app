@@ -52,3 +52,10 @@ yarn-error.log*
 next-env.d.ts
 public/sw.js
 public/sw.js
+
+# Security hardening
+!.env.example
+*-key.pem
+KubeSecrets/
+kubeSecrets/
+.env.test

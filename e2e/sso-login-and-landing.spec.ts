@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const EMAIL = process.env.E2E_LOGIN_EMAIL || 'demo@bengobox.dev';
-const PASSWORD = process.env.E2E_LOGIN_PASSWORD || 'DemoUser2024!';
+const PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
 
 test.describe('Rider App SSO login and landing', () => {
   test('landing or join loads', async ({ page }) => {
