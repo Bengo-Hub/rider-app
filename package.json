@@ -11,7 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@bengo-hub/maps": "github:Bengo-Hub/maps#v0.2.5",
+    "@bengo-hub/maps": "github:Bengo-Hub/maps#v0.2.6",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.2.4",
