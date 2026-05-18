@@ -1,4 +1,4 @@
-# Rider App - Next.js PWA (Delivery rider app)
+﻿# Rider App - Next.js PWA (Delivery rider app)
 FROM node:20-alpine AS base
 
 FROM base AS deps
@@ -8,7 +8,7 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN pnpm install --shamefully-hoist
+RUN pnpm install --shamefully-hoist --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
