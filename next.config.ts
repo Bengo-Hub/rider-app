@@ -5,7 +5,10 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
+  reloadOnOnline: true,
   workboxOptions: {
+    skipWaiting: false,
+    clientsClaim: true,
     runtimeCaching: [
       // Tile server: CacheFirst, 24h expiration
       {

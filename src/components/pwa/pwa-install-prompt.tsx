@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { requestAppPermissions } from "@/hooks/use-app-permissions";
 import { Download, Share, X } from "lucide-react";
 import Image from "next/image";
 import { useBrandConfig } from "@/hooks/useBrandConfig";
@@ -11,9 +12,9 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISS_KEY = "pwa-install-dismissed";
-const DISMISS_DURATION = 30 * 60 * 1000; // 30 minutes
-const RE_PROMPT_INTERVAL = 30 * 60 * 1000;
+const DISMISS_KEY = "rider_pwa_install_dismissed_until";
+const DISMISS_DURATION = 24 * 60 * 60 * 1000;
+const RE_PROMPT_INTERVAL = 24 * 60 * 60 * 1000;
 
 function isIOS(): boolean {
   if (typeof window === "undefined") return false;
@@ -30,10 +31,7 @@ function isStandalone(): boolean {
 
 function wasDismissedRecently(): boolean {
   if (typeof window === "undefined") return false;
-  const dismissed = localStorage.getItem(DISMISS_KEY);
-  if (!dismissed) return false;
-  const ts = parseInt(dismissed, 10);
-  return Date.now() - ts < DISMISS_DURATION;
+  return Date.now() < parseInt(localStorage.getItem(DISMISS_KEY) ?? "0", 10);
 }
 
 export function PWAInstallPrompt() {
@@ -92,13 +90,14 @@ export function PWAInstallPrompt() {
       setShowBanner(false);
       setDeferredPrompt(null);
       promptRef.current = null;
+      await requestAppPermissions();
     }
   }, [deferredPrompt]);
 
   const handleDismiss = useCallback(() => {
     setShowBanner(false);
     setShowIOSGuide(false);
-    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DURATION));
   }, []);
 
   const bannerWrapperClass = cn(
