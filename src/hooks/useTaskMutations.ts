@@ -48,9 +48,9 @@ export function useCancelTask(tenantSlug: string) {
 
   return useMutation({
     mutationFn: ({ taskId, reason }: { taskId: string; reason: string }) =>
-      api.post<{ message: string }>(
-        `/${tenantSlug}/tasks/${taskId}/cancel`,
-        { reason },
+      api.patch<{ message: string }>(
+        `/${tenantSlug}/tasks/${taskId}/status`,
+        { status: "cancelled", reason },
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["deliveries"] });
