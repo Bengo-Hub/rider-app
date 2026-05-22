@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
-import { Loader2, Shield } from "lucide-react";
+import { useBiometric } from "@/hooks/use-biometric";
+import { Fingerprint, Loader2, Shield } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -24,9 +25,23 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const returnTo = searchParams?.get("return_to") ?? "/";
   const redirectToSSO = useAuthStore((s) => s.redirectToSSO);
+  const hydrateFromWebAuthn = useAuthStore((s) => s.hydrateFromWebAuthn);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [storedEmail, setStoredEmail] = useState<string | null>(null);
 
-  // If already authenticated, redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setStoredEmail(localStorage.getItem('sso_last_email'));
+    }
+  }, []);
+
+  const { authenticate, isSupported, hasRegisteredCredential, isLoading: biometricLoading, error: biometricError } = useBiometric({
+    onAuthSuccess: async (tokens) => {
+      await hydrateFromWebAuthn(tokens);
+      router.replace(returnTo);
+    },
+  });
+
   if (isAuthenticated) {
     router.replace(returnTo);
     return null;
@@ -50,8 +65,29 @@ function LoginContent() {
           </p>
         </div>
 
-        {/* SSO Sign In */}
         <div className="space-y-3">
+          {/* Biometric shortcut */}
+          {isSupported && hasRegisteredCredential && storedEmail && (
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => authenticate(storedEmail)}
+                disabled={biometricLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-base font-semibold text-orange-700 transition hover:bg-orange-100 disabled:opacity-60"
+              >
+                {biometricLoading ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <Fingerprint className="size-5" />
+                )}
+                {biometricLoading ? 'Verifying…' : 'Sign in with fingerprint'}
+              </button>
+              {biometricError && (
+                <p className="text-center text-xs text-destructive">{biometricError}</p>
+              )}
+            </div>
+          )}
+
+          {/* SSO Sign In */}
           <button
             onClick={handleSignIn}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-base font-semibold text-white transition hover:bg-orange-600"

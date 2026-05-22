@@ -53,6 +53,7 @@ interface AuthState {
   redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
   logout: () => void;
+  hydrateFromWebAuthn: (tokens: { accessToken: string; refreshToken: string; expiresIn: number }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -141,6 +142,9 @@ export const useAuthStore = create<AuthState>()(
               const profile = await fetchMe(accessToken);
               const user: User = profile.user ?? profile;
 
+              if (typeof window !== 'undefined' && user.email) {
+                localStorage.setItem('sso_last_email', user.email);
+              }
               set({
                 user,
                 isAuthenticated: true,
@@ -173,6 +177,30 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             isAuthenticated: false,
           });
+        }
+      },
+
+      hydrateFromWebAuthn: async (tokens) => {
+        set({ status: "loading", isLoading: true, error: null });
+        try {
+          const profile = await fetchMe(tokens.accessToken);
+          const user: User = profile.user ?? profile;
+          if (typeof window !== 'undefined' && user.email) {
+            localStorage.setItem('sso_last_email', user.email);
+          }
+          set({
+            user,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken ?? null,
+            isAuthenticated: true,
+            isLoading: false,
+            status: 'authenticated',
+            error: null,
+            lastAuthenticatedAt: Date.now(),
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Authentication failed';
+          set({ status: 'error', error: message, isLoading: false, isAuthenticated: false });
         }
       },
 
