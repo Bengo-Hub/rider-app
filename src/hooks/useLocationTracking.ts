@@ -49,12 +49,12 @@ export function useLocationTracking({
       lastSentRef.current = now;
 
       try {
-        await api.post(`/${tenantSlug}/tracking/rider/location`, {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          heading: pos.coords.heading,
-          speed: pos.coords.speed,
-          accuracy: pos.coords.accuracy,
+        await api.post(`/${tenantSlug}/telemetry/location`, {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          bearing_deg: pos.coords.heading,
+          speed_kph: pos.coords.speed != null ? pos.coords.speed * 3.6 : undefined,
+          accuracy_m: pos.coords.accuracy,
         });
       } catch {
         // Silently fail — location updates are best-effort

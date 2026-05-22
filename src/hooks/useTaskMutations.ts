@@ -17,7 +17,7 @@ export function useUpdateTaskStatus(tenantSlug: string) {
       status: TaskStatus;
       reason?: string;
     }) =>
-      api.put<Task>(`/${tenantSlug}/tasks/${taskId}/status`, {
+      api.patch<Task>(`/${tenantSlug}/tasks/${taskId}/status`, {
         status,
         reason,
       }),
@@ -33,7 +33,7 @@ export function useAcceptTask(tenantSlug: string) {
 
   return useMutation({
     mutationFn: ({ taskId }: { taskId: string }) =>
-      api.put<Task>(`/${tenantSlug}/tasks/${taskId}/status`, {
+      api.patch<Task>(`/${tenantSlug}/tasks/${taskId}/status`, {
         status: "accepted",
       }),
     onSuccess: () => {
@@ -77,7 +77,7 @@ export function useSubmitProof(tenantSlug: string) {
         longitude?: number;
       };
     }) =>
-      api.post(`/${tenantSlug}/deliveries/${taskId}/proof`, proof),
+      api.post(`/${tenantSlug}/tasks/${taskId}/pod`, proof),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["deliveries"] });
       qc.invalidateQueries({ queryKey: ["active-delivery"] });
