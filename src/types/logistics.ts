@@ -70,11 +70,45 @@ export interface FleetMember {
   driver_code: string | null;
   status: "pending" | "active" | "suspended" | "inactive";
   vehicle_id: string | null;
+  average_rating: number;
+  total_ratings: number;
+  specialization_tags?: string[];
+  has_cold_storage?: boolean;
   joined_at: string | null;
   suspended_at: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  edges?: {
+    vehicle?: {
+      id: string;
+      vehicle_type: string;
+      make: string;
+      model: string;
+      license_plate: string;
+      status: string;
+    };
+  };
+}
+
+export interface RiderMeResponse {
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    phone: string;
+    role: string;
+  };
+  status: string;
+  rider?: FleetMember;
+  vehicle?: {
+    id: string;
+    vehicle_type: string;
+    make: string;
+    model: string;
+    license_plate: string;
+    status: string;
+  };
 }
 
 export interface TrackingInfo {

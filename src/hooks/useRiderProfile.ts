@@ -2,14 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { FleetMember } from "@/types/logistics";
+import type { RiderMeResponse } from "@/types/logistics";
 
-export function useRiderProfile(tenantSlug: string, memberId: string | undefined) {
+export function useRiderProfile(tenantSlug: string) {
   return useQuery({
-    queryKey: ["rider-profile", tenantSlug, memberId],
-    queryFn: () =>
-      api.get<FleetMember>(`/${tenantSlug}/fleet-members/${memberId}`),
-    enabled: !!tenantSlug && !!memberId,
-    staleTime: 1000 * 60 * 10,
+    queryKey: ["rider-me", tenantSlug],
+    queryFn: () => api.get<RiderMeResponse>(`/${tenantSlug}/riders/me`),
+    enabled: !!tenantSlug,
+    staleTime: 1000 * 60 * 5,
   });
 }

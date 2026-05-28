@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Bike, Car, Loader2, Save, Truck } from "lucide-react";
+import { ArrowLeft, Bike, Car, Loader2, Save, Star, Tag, Truck } from "lucide-react";
 
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { api } from "@/lib/api";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { useRiderProfile } from "@/hooks/useRiderProfile";
 
 const vehicleTypes = [
   { value: "bike", label: "Motorbike", icon: Bike },
@@ -24,6 +25,8 @@ export default function ProfilePage() {
   const orgSlug = useOrgSlug();
   const router = useRouter();
   const { user, setUser } = useAuthStore();
+  const { data: profileData } = useRiderProfile(orgSlug);
+  const riderData = profileData?.rider;
 
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [vehicleType, setVehicleType] = useState("bike");
@@ -95,6 +98,43 @@ export default function ProfilePage() {
       </header>
 
       <main className="flex-1 p-4">
+        {/* Scorecard — only shown for active riders */}
+        {riderData && riderData.status === "active" && (
+          <div className="mb-5 rounded-xl border bg-card p-4 space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">Your Performance</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-center">
+                <div className="flex items-center justify-center gap-1 text-amber-500">
+                  <Star className="h-4 w-4 fill-amber-500" />
+                  <span className="text-xl font-bold">
+                    {riderData.average_rating > 0
+                      ? riderData.average_rating.toFixed(1)
+                      : "—"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">Avg Rating</p>
+              </div>
+              <div className="rounded-lg bg-primary/5 p-3 text-center">
+                <p className="text-xl font-bold text-primary">{riderData.total_ratings}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Deliveries Rated</p>
+              </div>
+            </div>
+            {riderData.specialization_tags && riderData.specialization_tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                {riderData.specialization_tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Contact Info */}
           <section className="rounded-xl border bg-card p-4 space-y-4">
