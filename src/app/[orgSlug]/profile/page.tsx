@@ -13,6 +13,8 @@ import { api } from "@/lib/api";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { useRiderProfile } from "@/hooks/useRiderProfile";
+import { useMyEarnings } from "@/hooks/useEarnings";
+import { useDeliveries } from "@/hooks/useDeliveries";
 
 const vehicleTypes = [
   { value: "bike", label: "Motorbike", icon: Bike },
@@ -27,6 +29,8 @@ export default function ProfilePage() {
   const { user, setUser } = useAuthStore();
   const { data: profileData } = useRiderProfile(orgSlug);
   const riderData = profileData?.rider;
+  const { data: earnings } = useMyEarnings();
+  const { data: completedData } = useDeliveries({ tenantSlug: orgSlug, status: "completed", limit: 1 });
 
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [vehicleType, setVehicleType] = useState("bike");
@@ -100,25 +104,71 @@ export default function ProfilePage() {
       <main className="flex-1 p-4">
         {/* Scorecard — only shown for active riders */}
         {riderData && riderData.status === "active" && (
-          <div className="mb-5 rounded-xl border bg-card p-4 space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">Your Performance</h2>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="mb-5 rounded-xl border bg-card p-4 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Your Performance</h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-950/40 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                Active
+              </span>
+            </div>
+
+            {/* KPI grid — 4 stats */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Rating */}
               <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-center">
                 <div className="flex items-center justify-center gap-1 text-amber-500">
                   <Star className="h-4 w-4 fill-amber-500" />
                   <span className="text-xl font-bold">
-                    {riderData.average_rating > 0
-                      ? riderData.average_rating.toFixed(1)
-                      : "—"}
+                    {riderData.average_rating > 0 ? riderData.average_rating.toFixed(1) : "—"}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">Avg Rating</p>
               </div>
+
+              {/* Deliveries rated */}
               <div className="rounded-lg bg-primary/5 p-3 text-center">
                 <p className="text-xl font-bold text-primary">{riderData.total_ratings}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Deliveries Rated</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Rated Deliveries</p>
+              </div>
+
+              {/* Total completed */}
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-3 text-center">
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  {completedData?.total ?? "—"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Total Completed</p>
+              </div>
+
+              {/* This week earnings */}
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-3 text-center">
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {earnings
+                    ? `${earnings.currency} ${earnings.week.toLocaleString()}`
+                    : "—"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">This Week</p>
               </div>
             </div>
+
+            {/* Rating bar */}
+            {riderData.average_rating > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Rating score</span>
+                  <span>{((riderData.average_rating / 5) * 100).toFixed(0)}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-amber-400 transition-all"
+                    style={{ width: `${(riderData.average_rating / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Specialization tags */}
             {riderData.specialization_tags && riderData.specialization_tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 <Tag className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />

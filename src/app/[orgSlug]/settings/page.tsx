@@ -91,7 +91,11 @@ export default function SettingsPage() {
             label="Edit Profile"
             href={orgRoute(orgSlug, "/profile")}
           />
-          <MenuItem icon={Bell} label="Notifications" />
+          <MenuItemLink
+            icon={Bell}
+            label="Notifications"
+            href={orgRoute(orgSlug, "/settings/notifications")}
+          />
           <MenuItem icon={Shield} label="Privacy & Security" />
           <MenuItem icon={HelpCircle} label="Help & Support" />
         </div>
