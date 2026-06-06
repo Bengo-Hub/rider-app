@@ -59,7 +59,8 @@ export interface TaskListResponse {
   data: Task[];
   total: number;
   limit: number;
-  offset: number;
+  page: number;
+  hasMore: boolean;
 }
 
 export interface FleetMember {
