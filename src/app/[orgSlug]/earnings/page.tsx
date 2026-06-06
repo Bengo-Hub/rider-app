@@ -6,7 +6,7 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
 import { useMyEarnings, useMyStatements, useMyBillingEvents } from "@/hooks/useEarnings";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { ArrowLeft, FileText, Clock } from "lucide-react";
+import { ArrowLeft, FileText, Clock, AlertCircle } from "lucide-react";
 
 type Tab = "overview" | "statements" | "history";
 
@@ -35,13 +35,43 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <AlertCircle className="h-6 w-6 text-red-500" />
+      <p className="text-sm text-gray-600">{message}</p>
+      <button
+        onClick={onRetry}
+        className="rounded-full border border-orange-500 px-4 py-1.5 text-xs font-medium text-orange-600 active:bg-orange-50"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 export default function EarningsPage() {
   const orgSlug = useOrgSlug();
   const [tab, setTab] = useState<Tab>("overview");
 
-  const { data: summary, isLoading: loadingSummary } = useMyEarnings();
-  const { data: statements = [], isLoading: loadingStatements } = useMyStatements();
-  const { data: events = [], isLoading: loadingEvents } = useMyBillingEvents();
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    isError: errorSummary,
+    refetch: refetchSummary,
+  } = useMyEarnings();
+  const {
+    data: statements = [],
+    isLoading: loadingStatements,
+    isError: errorStatements,
+    refetch: refetchStatements,
+  } = useMyStatements();
+  const {
+    data: events = [],
+    isLoading: loadingEvents,
+    isError: errorEvents,
+    refetch: refetchEvents,
+  } = useMyBillingEvents();
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pb-20">
@@ -81,6 +111,19 @@ export default function EarningsPage() {
             <div className="rounded-xl bg-linear-to-r from-green-500 to-emerald-600 p-5 text-white">
               {loadingSummary ? (
                 <div className="h-16 animate-pulse rounded-lg bg-white/20" />
+              ) : errorSummary ? (
+                <div className="flex flex-col items-start gap-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <AlertCircle className="h-4 w-4" />
+                    Couldn&apos;t load your earnings
+                  </div>
+                  <button
+                    onClick={() => refetchSummary()}
+                    className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium active:bg-white/30"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : summary ? (
                 <>
                   <p className="text-sm font-medium opacity-80">This Month</p>
@@ -139,6 +182,11 @@ export default function EarningsPage() {
               <div className="flex justify-center py-10">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
               </div>
+            ) : errorStatements ? (
+              <ErrorState
+                message="Couldn't load your statements."
+                onRetry={() => refetchStatements()}
+              />
             ) : statements.length > 0 ? (
               <div className="divide-y">
                 {statements.map((stmt) => (
@@ -176,6 +224,11 @@ export default function EarningsPage() {
               <div className="flex justify-center py-10">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
               </div>
+            ) : errorEvents ? (
+              <ErrorState
+                message="Couldn't load your earnings history."
+                onRetry={() => refetchEvents()}
+              />
             ) : events.length > 0 ? (
               <div className="divide-y">
                 {events.map((ev) => (

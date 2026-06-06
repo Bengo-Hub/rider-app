@@ -19,7 +19,7 @@ export interface EarningStatement {
   gross_amount: number;
   net_amount: number;
   status: "draft" | "confirmed" | "paid";
-  created_at: string;
+  generated_at: string;
 }
 
 export interface BillingEvent {
@@ -61,7 +61,7 @@ export function useMyBillingEvents() {
   return useQuery<BillingEvent[]>({
     queryKey: ["my-billing-events", orgSlug],
     queryFn: async () => {
-      return api.get<BillingEvent[]>(`/${orgSlug}/earnings/events`);
+      return api.get<BillingEvent[]>(`/${orgSlug}/riders/me/earnings/events`);
     },
     enabled: !!orgSlug,
     staleTime: 60_000,
