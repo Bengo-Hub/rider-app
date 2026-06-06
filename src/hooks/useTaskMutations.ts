@@ -70,6 +70,7 @@ export function useSubmitProof(tenantSlug: string) {
       taskId: string;
       proof: {
         delivery_code?: string;
+        confirmation_code?: string;
         photo_url?: string;
         recipient_name?: string;
         notes?: string;

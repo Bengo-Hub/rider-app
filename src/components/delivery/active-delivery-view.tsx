@@ -14,6 +14,7 @@ const DeliveryMap = dynamic(
 
 export interface ProofOfDelivery {
   delivery_code?: string;
+  confirmation_code?: string;
   photo_url?: string;
   recipient_name?: string;
   notes?: string;
@@ -75,6 +76,7 @@ export function ActiveDeliveryView({
   const [showProofForm, setShowProofForm] = useState(false);
   const [proofData, setProofData] = useState<ProofOfDelivery>({
     delivery_code: "",
+    confirmation_code: "",
     recipient_name: task.customer_name || "",
     notes: "",
   });
@@ -291,6 +293,31 @@ export function ActiveDeliveryView({
               </button>
             </div>
 
+            {/* Delivery Confirmation Code (required) */}
+            <div>
+              <label className="block text-xs font-semibold uppercase text-gray-500 mb-1">
+                Delivery Confirmation Code <span className="text-red-500">*</span>
+              </label>
+              <p className="mb-1 text-xs text-gray-500">
+                Ask the customer for their delivery code (sent to them by email).
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="\d*"
+                value={proofData.confirmation_code ?? ""}
+                onChange={(e) =>
+                  setProofData((p) => ({
+                    ...p,
+                    confirmation_code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                  }))
+                }
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base tracking-[0.5em] focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+              />
+            </div>
+
             {/* Delivery Code */}
             <div>
               <label className="block text-xs font-semibold uppercase text-gray-500 mb-1">
@@ -407,6 +434,11 @@ export function ActiveDeliveryView({
             </div>
 
             {/* Submit */}
+            {(proofData.confirmation_code ?? "").length !== 6 && (
+              <p className="text-xs font-medium text-gray-500">
+                Enter the customer&apos;s 6-digit confirmation code to complete the delivery.
+              </p>
+            )}
             <button
               onClick={() => {
                 if (onSubmitProof) {
@@ -430,7 +462,11 @@ export function ActiveDeliveryView({
                   onAdvanceStatus(task.id, "completed" as TaskStatus);
                 }
               }}
-              disabled={submittingProof || advancing}
+              disabled={
+                submittingProof ||
+                advancing ||
+                (proofData.confirmation_code ?? "").length !== 6
+              }
               className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3.5 text-base font-semibold text-white active:bg-green-700 disabled:opacity-50"
             >
               {submittingProof || advancing ? "Submitting..." : "Confirm & Complete"}
