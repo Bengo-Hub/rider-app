@@ -58,7 +58,9 @@ export async function GET(
 
   const manifest = {
     name: `${name} Rider`,
-    short_name: `${name} Rider`,
+    // Home-screen label = tenant first word + service, e.g. "Urban Rider",
+    // so a tenant's several installed Bengo apps stay distinguishable.
+    short_name: `${name.trim().split(/\s+/)[0] || 'Bengo'} Rider`,
     description: 'Delivery rider app — accept jobs, navigate routes and track earnings.',
     start_url: `/${orgSlug}/`,
     scope: `/${orgSlug}/`,
