@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { setOn401 } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
+import { OfflineBar } from "@bengo-hub/shared-ui-lib/offline";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -41,6 +42,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <OfflineBar
+        registerSW={false}
+        availableOffline={["View assigned deliveries", "Navigation"]}
+        disabledOffline={["Status updates", "Proof of delivery", "Live location"]}
+      />
       {children}
       <Toaster position="top-center" richColors />
       <PWAInstallPrompt />
