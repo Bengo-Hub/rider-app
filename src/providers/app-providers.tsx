@@ -43,7 +43,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <OfflineBar
-        registerSW={false}
+        registerSW={true}
         availableOffline={["View assigned deliveries", "Navigation"]}
         disabledOffline={["Status updates", "Proof of delivery", "Live location"]}
       />

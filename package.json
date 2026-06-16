@@ -31,7 +31,7 @@
     "tailwind-merge": "^3.4.1",
     "zod": "^4.3.6",
     "zustand": "^5.0.11",
-    "@bengo-hub/shared-ui-lib": "github:Bengo-Hub/shared-ui-lib#v0.1.21"
+    "@bengo-hub/shared-ui-lib": "github:Bengo-Hub/shared-ui-lib#v0.1.22"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

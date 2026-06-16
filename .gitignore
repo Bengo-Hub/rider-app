@@ -50,8 +50,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-public/sw.js
-public/sw.js
 
 # Security hardening
 !.env.example
