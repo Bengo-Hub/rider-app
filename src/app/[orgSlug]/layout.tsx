@@ -25,7 +25,7 @@ export default async function OrgSlugLayout({
   const { orgSlug } = await params;
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <OrgSlugProvider orgSlug={orgSlug}>
         <PWAUpdateBanner />
         <ProtectedRoute>{children}</ProtectedRoute>
