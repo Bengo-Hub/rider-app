@@ -6,6 +6,7 @@ import {
   exchangeCodeForTokens,
   fetchMe,
   logoutRedirect,
+  revokeServerSession,
 } from "@/lib/auth-api";
 import {
   generateCodeChallenge,
@@ -208,6 +209,10 @@ export const useAuthStore = create<AuthState>()(
        * Logout - clear local state and redirect to SSO logout.
        */
       logout: () => {
+        // Revoke the backend session (Redis session_token keys + DB sessions)
+        // before clearing local state. keepalive lets the POST finish across the
+        // logoutRedirect() navigation, so we don't need to await it.
+        void revokeServerSession(get().accessToken);
         set({
           user: null,
           accessToken: null,
