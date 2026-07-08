@@ -93,7 +93,7 @@ function LoginContent() {
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-base font-semibold text-white transition hover:bg-orange-600"
           >
             <Shield className="size-5" />
-            Sign in with BengoBox
+            Sign in with Codevertex
           </button>
         </div>
 

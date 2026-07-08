@@ -87,7 +87,7 @@ function JoinPageContent() {
       <header className="bg-orange-500 px-5 pt-10 pb-8 text-white text-center">
         <div className="flex items-center justify-center gap-2 mb-3">
           <Bike className="size-7" />
-          <span className="text-xl font-bold tracking-tight">BengoBox Rider</span>
+          <span className="text-xl font-bold tracking-tight">Codevertex Rider</span>
         </div>
         <h1 className="text-2xl font-extrabold leading-tight">
           {inviteCode
