@@ -9,7 +9,7 @@ export const brand = {
     emphasis: "#f36a0c",
   },
   support: {
-    email: "support@codevertexitsolutions.com",
+    email: "support@codevertexafrica.com",
     phone: "+254 743 793 901",
   }
 } as const;

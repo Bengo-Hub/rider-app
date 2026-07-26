@@ -114,7 +114,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 ```typescript
 // Cache map tiles for offline viewing (self-hosted TileServer-GL)
 registerRoute(
-  ({ url }) => url.origin === 'https://tiles.codevertexitsolutions.com',
+  ({ url }) => url.origin === 'https://tiles.codevertexafrica.com',
   new CacheFirst({
     cacheName: 'map-tiles-cache',
     plugins: [

@@ -31,7 +31,7 @@ interface DeliveryMapProps {
 }
 
 const TILE_STYLE = process.env.NEXT_PUBLIC_TILE_STYLE_URL ||
-  "https://tiles.codevertexitsolutions.com/styles/osm-bright/style.json";
+  "https://tiles.codevertexafrica.com/styles/osm-bright/style.json";
 
 // Fallback to free OSM raster tiles if vector tile server unavailable
 const FALLBACK_STYLE: maplibregl.StyleSpecification = {

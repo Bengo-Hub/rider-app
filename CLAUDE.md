@@ -2,13 +2,13 @@
 
 ## Service
 Next.js 15 PWA for riders: active delivery, GPS tracking, earnings, KYC/profile.  
-**Production**: `https://riderapp.codevertexitsolutions.com`  
+**Production**: `https://riderapp.codevertexafrica.com`  
 **K8s namespace**: `logistics`
 
 ## Architecture
 - **Framework**: Next.js 15 App Router, TypeScript, Tailwind CSS, PWA (next-pwa)
 - **State**: TanStack Query v5 for server state; Zustand for auth state
-- **API**: shared Axios client (`lib/api`) → `https://logisticsapi.codevertexitsolutions.com/api/v1/{orgSlug}/*`
+- **API**: shared Axios client (`lib/api`) → `https://logisticsapi.codevertexafrica.com/api/v1/{orgSlug}/*`
 - **Auth**: SSO PKCE flow via auth-api; JWT Bearer injected by Axios interceptor
 - **GPS**: `useLocationTracking` → `POST /{tenant}/telemetry/location` (15s interval)
 

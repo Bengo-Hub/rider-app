@@ -17,7 +17,7 @@ if (fs.existsSync(envTestPath)) {
   }
 }
 
-const base = process.env.BASE_URL || 'https://riderapp.codevertexitsolutions.com';
+const base = process.env.BASE_URL || 'https://riderapp.codevertexafrica.com';
 
 /**
  * Playwright E2E config for rider-app.

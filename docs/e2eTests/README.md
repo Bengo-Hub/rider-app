@@ -16,8 +16,8 @@ Local runs open the browser (headed). For CI, set `CI=true` for headless.
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `BASE_URL` | Rider app origin | `https://riderapp.codevertexitsolutions.com` |
+| `BASE_URL` | Rider app origin | `https://riderapp.codevertexafrica.com` |
 | `E2E_LOGIN_EMAIL` | SSO test user email | (seeded demo user) |
 | `E2E_LOGIN_PASSWORD` | SSO test user password | (seeded demo user) |
 
-Production host: `riderapp.codevertexitsolutions.com` (see shared-docs/sso-integration-guide.md).
+Production host: `riderapp.codevertexafrica.com` (see shared-docs/sso-integration-guide.md).

@@ -48,7 +48,7 @@ Status updates → PUT /tasks/{id}/status → invalidates query cache
 
 ## K8s Deployment
 - **Namespace**: logistics
-- **Ingress**: `riderapp.codevertexitsolutions.com` (see devops-k8s/apps/rider-app/values.yaml)
+- **Ingress**: `riderapp.codevertexafrica.com` (see devops-k8s/apps/rider-app/values.yaml)
 - **Image**: `docker.io/codevertex/rider-app` (tag from GIT_COMMIT_ID in CI)
 - **Resources**: 50m-250m CPU, 128Mi-512Mi memory
 - **Health**: HTTP GET `/healthz` with readiness/liveness probes
