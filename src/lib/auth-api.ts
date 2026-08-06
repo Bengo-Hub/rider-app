@@ -4,6 +4,8 @@
  * This module provides SSO URL builders and token exchange.
  */
 
+import { revokeServerSession as sharedRevokeServerSession } from '@bengo-hub/shared-ui-lib/auth';
+
 // SSO configuration
 const SSO_BASE_URL =
   process.env.NEXT_PUBLIC_SSO_URL ?? "https://sso.codevertexafrica.com";
@@ -63,16 +65,7 @@ export function buildLogoutUrl(postLogoutRedirectUri?: string): string {
  * keys, and clears the cookie. Never throws.
  */
 export async function revokeServerSession(accessToken?: string | null): Promise<void> {
-  try {
-    await fetch(new URL("/api/v1/auth/logout", SSO_BASE_URL).toString(), {
-      method: "POST",
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      credentials: "include",
-      keepalive: true,
-    });
-  } catch {
-    /* best-effort: still clear local state + redirect */
-  }
+  return sharedRevokeServerSession(SSO_BASE_URL, accessToken);
 }
 
 export async function refreshTokens(refreshToken: string): Promise<{
