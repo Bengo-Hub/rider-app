@@ -153,7 +153,7 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   en_route_pickup: "En Route to Pickup",
   arrived_pickup: "At Pickup",
   picked_up: "Picked Up",
-  en_route_dropoff: "En Route to Drop-off",
+  en_route_dropoff: "Driving to destination",
   arrived_dropoff: "At Drop-off",
   completed: "Completed",
   cancelled: "Cancelled",
