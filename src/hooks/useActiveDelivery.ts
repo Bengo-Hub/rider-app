@@ -17,8 +17,15 @@ export function useActiveDelivery({
     queryKey: ["active-delivery", tenantSlug, riderId],
     queryFn: async (): Promise<Task | null> => {
       if (!riderId) return null;
+      // /riders/me/tasks resolves the fleet member from the JWT server-side, so it
+      // always scopes to the signed-in rider correctly. The generic /tasks list
+      // endpoint has no rider_id query filter wired up at all (it takes status/
+      // outlet only), and even if it did, `riderId` here is the auth user id, not
+      // the fleet_member id assignments are actually keyed on -- either way a
+      // ?rider_id= query param on /tasks was silently ignored, returning the
+      // tenant's single most-recent task regardless of who it belonged to.
       const res = await api.get<TaskListResponse>(
-        `/${tenantSlug}/tasks?rider_id=${riderId}&limit=1`,
+        `/${tenantSlug}/riders/me/tasks?limit=20`,
       );
       // Find the first non-completed, non-cancelled, non-failed, non-pending task
       const active = res.data?.find((t) =>
