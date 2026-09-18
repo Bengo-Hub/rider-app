@@ -53,7 +53,7 @@ test.describe.serial('Rider delivery workflow', () => {
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 
     // Check if already authenticated or need to go through SSO
-    const onSSO = await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 10_000 })
+    const onSSO = await page.waitForURL(/accounts\.codevertexafrica\.com/, { timeout: 10_000 })
       .then(() => true).catch(() => false);
 
     if (!onSSO) {
@@ -62,7 +62,7 @@ test.describe.serial('Rider delivery workflow', () => {
       const hasLink = await signInLink.isVisible({ timeout: 5_000 }).catch(() => false);
       if (hasLink) {
         await signInLink.click();
-        await page.waitForURL(/accounts\.codevertexitsolutions\.com/, { timeout: 20_000 });
+        await page.waitForURL(/accounts\.codevertexafrica\.com/, { timeout: 20_000 });
       } else {
         // Already authenticated — skip login
         test.info().annotations.push({ type: 'info', description: 'Already authenticated, skipping SSO login' });
@@ -80,7 +80,7 @@ test.describe.serial('Rider delivery workflow', () => {
     await page.locator('button[type="submit"]').first().click();
 
     // Wait for redirect back to rider app
-    await page.waitForURL(/riderapp\.codevertexitsolutions\.com|localhost/, { timeout: 30_000 });
+    await page.waitForURL(/riderapp\.codevertexafrica\.com|localhost/, { timeout: 30_000 });
     await page.waitForTimeout(3_000);
 
     // Confirm we're on the rider app
