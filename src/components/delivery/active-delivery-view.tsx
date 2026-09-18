@@ -6,9 +6,15 @@ import type { Task, TaskStatus } from "@/types/logistics";
 import { STATUS_LABELS, NEXT_STATUS } from "@/types/logistics";
 import { StatusBadge } from "./status-badge";
 import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X, WifiOff } from "lucide-react";
+import { googleMapsEmbedAvailable } from "@/components/map/google-map-embed";
 
 const DeliveryMap = dynamic(
   () => import("@/components/map/delivery-map").then((m) => ({ default: m.DeliveryMap })),
+  { ssr: false, loading: () => <div className="h-48 w-full animate-pulse rounded-xl bg-gray-200" /> }
+);
+
+const GoogleMapEmbed = dynamic(
+  () => import("@/components/map/google-map-embed").then((m) => ({ default: m.GoogleMapEmbed })),
   { ssr: false, loading: () => <div className="h-48 w-full animate-pulse rounded-xl bg-gray-200" /> }
 );
 
@@ -133,22 +139,40 @@ export function ActiveDeliveryView({
         </div>
       </div>
 
-      {/* Delivery Map */}
-      <DeliveryMap
-        riderLat={riderLat ?? null}
-        riderLng={riderLng ?? null}
-        riderHeading={riderHeading ?? null}
-        pickupLat={task.pickup_latitude}
-        pickupLng={task.pickup_longitude}
-        pickupLabel={task.pickup_address || "Pickup"}
-        dropoffLat={task.dropoff_latitude}
-        dropoffLng={task.dropoff_longitude}
-        dropoffLabel={task.dropoff_address || "Dropoff"}
-        isPickupPhase={isPickupPhase}
-        etaMinutes={routeDurationMinutes ?? task.eta_minutes}
-        distanceKm={routeDistanceKm ?? task.distance_km}
-        routeCoordinates={routeCoordinates}
-      />
+      {/* Delivery Map — a task is only ever shown here once assigned to (and accepted by) this
+          rider, matching "embed Google Maps once a driver is assigned." Google's Embed API (a
+          plain iframe, no metered per-load billing) is the primary map when configured; the
+          self-hosted MapLibre/Valhalla DeliveryMap is the fallback, used automatically when no
+          Google Maps key is set (googleMapsEmbedAvailable()) or once a driver's live GPS-tracked
+          position matters more than a static directions embed can show (Embed API has no JS
+          event surface, so its route never live-updates as the rider physically moves). */}
+      {googleMapsEmbedAvailable() ? (
+        <GoogleMapEmbed
+          originLat={riderLat ?? null}
+          originLng={riderLng ?? null}
+          destLat={isPickupPhase ? task.pickup_latitude : task.dropoff_latitude}
+          destLng={isPickupPhase ? task.pickup_longitude : task.dropoff_longitude}
+          destLabel={isPickupPhase ? (task.pickup_address || "Pickup") : (task.dropoff_address || "Dropoff")}
+          etaMinutes={routeDurationMinutes ?? task.eta_minutes}
+          distanceKm={routeDistanceKm ?? task.distance_km}
+        />
+      ) : (
+        <DeliveryMap
+          riderLat={riderLat ?? null}
+          riderLng={riderLng ?? null}
+          riderHeading={riderHeading ?? null}
+          pickupLat={task.pickup_latitude}
+          pickupLng={task.pickup_longitude}
+          pickupLabel={task.pickup_address || "Pickup"}
+          dropoffLat={task.dropoff_latitude}
+          dropoffLng={task.dropoff_longitude}
+          dropoffLabel={task.dropoff_address || "Dropoff"}
+          isPickupPhase={isPickupPhase}
+          etaMinutes={routeDurationMinutes ?? task.eta_minutes}
+          distanceKm={routeDistanceKm ?? task.distance_km}
+          routeCoordinates={routeCoordinates}
+        />
+      )}
 
       {/* Offline route indicator */}
       {routeIsFromCache && (
