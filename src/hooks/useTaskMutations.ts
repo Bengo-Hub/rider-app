@@ -99,6 +99,8 @@ export function useSubmitProof(tenantSlug: string) {
     }) =>
       api.post(`/${tenantSlug}/tasks/${taskId}/pod`, proof),
     onSuccess: () => {
+      // Cash taken on this delivery now shows under "Cash to hand in".
+      qc.invalidateQueries({ queryKey: ["my-cash"] });
       qc.invalidateQueries({ queryKey: ["deliveries"] });
       qc.invalidateQueries({ queryKey: ["active-delivery"] });
     },

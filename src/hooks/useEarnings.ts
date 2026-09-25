@@ -67,3 +67,29 @@ export function useMyBillingEvents() {
     staleTime: 60_000,
   });
 }
+
+export interface CashDelivery {
+  pod_id: string;
+  task_id: string;
+  order_number?: string;
+  amount: number;
+  delivered_at: string;
+}
+
+export interface RiderCash {
+  fleet_member_id: string;
+  held: number;
+  deliveries: CashDelivery[];
+  oldest_at?: string;
+}
+
+/** Cash on delivery this rider holds and must hand in at the outlet (GET /riders/me/cash). */
+export function useMyCash() {
+  const orgSlug = useOrgSlug();
+  return useQuery({
+    queryKey: ["my-cash", orgSlug],
+    queryFn: () => api.get<RiderCash>(`/${orgSlug}/riders/me/cash`),
+    enabled: !!orgSlug,
+    refetchInterval: 60_000,
+  });
+}

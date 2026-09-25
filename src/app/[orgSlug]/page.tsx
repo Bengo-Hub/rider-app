@@ -11,7 +11,8 @@ import { useActiveDelivery } from "@/hooks/useActiveDelivery";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeliveryCard } from "@/components/delivery/delivery-card";
 import { useRouter } from "next/navigation";
-import { Package, Zap, DollarSign, Settings } from "lucide-react";
+import { Banknote, Package, Zap, DollarSign, Settings } from "lucide-react";
+import { useMyCash, useMyEarnings } from "@/hooks/useEarnings";
 import { useBrandConfig } from "@/hooks/useBrandConfig";
 import Image from "next/image";
 
@@ -22,6 +23,10 @@ export default function RiderDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { data: brandConfig } = useBrandConfig();
+
+  const { data: myCash } = useMyCash();
+  const { data: earnings } = useMyEarnings();
+  const cashCurrency = earnings?.currency || "KES";
 
   // Open jobs this rider may take (not the tenant-wide task list, which exposed other riders' jobs).
   const { data: openJobs } = useOpenJobs(orgSlug);
@@ -80,6 +85,26 @@ export default function RiderDashboard() {
           {/* Decorative background element */}
           <div className="absolute -right-4 -top-4 size-32 rounded-full bg-white/10 blur-3xl" />
         </div>
+
+        {/* Cash on delivery still to hand in at the outlet */}
+        {(myCash?.held ?? 0) > 0 && (
+          <div className="flex items-center gap-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+              <Banknote className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                Cash to hand in
+              </p>
+              <p className="text-xl font-black text-foreground">
+                {cashCurrency} {(myCash?.held ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                From {myCash?.deliveries.length ?? 0} cash deliver{myCash?.deliveries.length === 1 ? "y" : "ies"}. Hand it in at the outlet.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Active Delivery Banner */}
         {activeTask && (
