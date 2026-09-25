@@ -41,7 +41,7 @@ export function PWAInstallPrompt() {
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   const { data: brandConfig } = useBrandConfig();
-  const appName = brandConfig?.shortName || "Rider App";
+  const appName = brandConfig?.appName || "Rider App";
   const appLogo = brandConfig?.logoUrl || "/icons/rider-icon-192x192.png";
 
   useEffect(() => {

@@ -42,7 +42,7 @@ export function Header() {
               {user?.name?.split(" ")[0] ?? "Rider"}
             </h1>
             <p className="text-[10px] text-primary font-black uppercase tracking-widest opacity-80">
-              {brandConfig?.shortName || "Urban Loft"}
+              {brandConfig?.appName || "Rider App"}
             </p>
           </div>
         </div>
