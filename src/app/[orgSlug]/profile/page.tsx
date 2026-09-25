@@ -30,7 +30,8 @@ export default function ProfilePage() {
   const { data: profileData } = useRiderProfile(orgSlug);
   const riderData = profileData?.rider;
   const { data: earnings } = useMyEarnings();
-  const { data: completedData } = useDeliveries({ tenantSlug: orgSlug, status: "completed", limit: 1 });
+  // This rider's own deliveries; tasks end in "delivered" ("completed" is never reached).
+  const { data: completedData } = useDeliveries({ tenantSlug: orgSlug, status: "delivered", mine: true, limit: 1 });
 
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [vehicleType, setVehicleType] = useState("bike");

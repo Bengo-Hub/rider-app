@@ -43,6 +43,22 @@ export function useAcceptTask(tenantSlug: string) {
   });
 }
 
+/** Take an open job; it becomes this rider's and counts as accepted. 409 if someone got it first. */
+export function useClaimTask(tenantSlug: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId }: { taskId: string }) =>
+      api.post<Task>(`/${tenantSlug}/riders/me/tasks/${taskId}/claim`, {}),
+    onSettled: () => {
+      // Refresh either way: on a 409 the job is gone and should drop off the list.
+      qc.invalidateQueries({ queryKey: ["open-jobs"] });
+      qc.invalidateQueries({ queryKey: ["deliveries"] });
+      qc.invalidateQueries({ queryKey: ["active-delivery"] });
+    },
+  });
+}
+
 export function useCancelTask(tenantSlug: string) {
   const qc = useQueryClient();
 

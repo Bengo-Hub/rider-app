@@ -9,9 +9,12 @@ interface DeliveryCardProps {
   onAccept?: (taskId: string) => void;
   onView?: (taskId: string) => void;
   accepting?: boolean;
+  /** Take an open (unassigned) job. */
+  onClaim?: (taskId: string) => void;
+  claiming?: boolean;
 }
 
-export function DeliveryCard({ task, onAccept, onView, accepting }: DeliveryCardProps) {
+export function DeliveryCard({ task, onAccept, onView, accepting, onClaim, claiming }: DeliveryCardProps) {
   const timeAgo = getTimeAgo(task.created_at);
 
   return (
@@ -65,9 +68,22 @@ export function DeliveryCard({ task, onAccept, onView, accepting }: DeliveryCard
           </span>
         </div>
 
-        {/* A rider accepts a job offered to them (assigned by dispatch or auto-assign). Unassigned
-            "pending" jobs are dispatched by the outlet or the dispatcher, so they show no button:
-            accepting one used to fail with an invalid transition every time. */}
+        {/* An open job (no rider yet) can be taken when the business lets riders claim jobs; it
+            becomes this rider's and counts as accepted. */}
+        {task.status === "pending" && onClaim && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClaim(task.id);
+            }}
+            disabled={claiming}
+            className="min-h-[44px] min-w-[44px] rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white active:bg-orange-600 disabled:opacity-50"
+          >
+            {claiming ? "..." : "Take job"}
+          </button>
+        )}
+
+        {/* A rider accepts a job offered to them (assigned by dispatch or auto-assign). */}
         {task.status === "assigned" && onAccept && (
           <button
             onClick={(e) => {

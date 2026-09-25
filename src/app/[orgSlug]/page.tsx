@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
 import { useAuthStore } from "@/store/auth-store";
-import { useDeliveries } from "@/hooks/useDeliveries";
+import { useDeliveries, useOpenJobs } from "@/hooks/useDeliveries";
+import { useClaimTask } from "@/hooks/useTaskMutations";
+import { toast } from "sonner";
 import { useActiveDelivery } from "@/hooks/useActiveDelivery";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeliveryCard } from "@/components/delivery/delivery-card";
@@ -21,11 +23,21 @@ export default function RiderDashboard() {
   const user = useAuthStore((s) => s.user);
   const { data: brandConfig } = useBrandConfig();
 
-  const { data: pendingTasks } = useDeliveries({
-    tenantSlug: orgSlug,
-    status: "pending",
-    limit: 5,
-  });
+  // Open jobs this rider may take (not the tenant-wide task list, which exposed other riders' jobs).
+  const { data: openJobs } = useOpenJobs(orgSlug);
+  const openList = openJobs?.data ?? [];
+  const claimTask = useClaimTask(orgSlug);
+  const handleClaim = (taskId: string) =>
+    claimTask.mutate(
+      { taskId },
+      {
+        onSuccess: () => {
+          toast.success("Job taken. Head to the pickup point.");
+          router.push(orgRoute(orgSlug, "/active"));
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : "Could not take this job"),
+      },
+    );
 
   const { data: activeTask } = useActiveDelivery({
     tenantSlug: orgSlug,
@@ -102,7 +114,7 @@ export default function RiderDashboard() {
             <div>
               <p className="font-black tracking-tight text-foreground">Queue</p>
               <p className="text-[10px] font-bold text-muted-foreground uppercase">
-                {pendingTasks?.total ?? 0} Available
+                {openList.length} Open
               </p>
             </div>
           </Link>
@@ -126,7 +138,7 @@ export default function RiderDashboard() {
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground opacity-70">
               Available Work
             </h2>
-            {(pendingTasks?.total ?? 0) > 3 && (
+            {openList.length > 3 && (
               <Link
                 href={orgRoute(orgSlug, "/deliveries")}
                 className="text-[10px] font-black uppercase tracking-widest text-primary"
@@ -136,15 +148,14 @@ export default function RiderDashboard() {
             )}
           </div>
 
-          {pendingTasks?.data && pendingTasks.data.length > 0 ? (
+          {openList.length > 0 ? (
             <div className="space-y-4">
-              {pendingTasks.data.slice(0, 3).map((task) => (
+              {openList.slice(0, 3).map((task) => (
                 <DeliveryCard
                   key={task.id}
                   task={task}
-                  onView={() => {
-                    router.push(orgRoute(orgSlug, "/deliveries"));
-                  }}
+                  onClaim={handleClaim}
+                  claiming={claimTask.isPending}
                 />
               ))}
             </div>
@@ -152,10 +163,12 @@ export default function RiderDashboard() {
             <div className="rounded-2xl border-2 border-dashed border-border bg-card/50 p-10 text-center">
               <Package className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
               <p className="mt-4 font-bold text-foreground opacity-50">
-                No deliveries available
+                {openJobs?.claim_enabled === false ? "Jobs are assigned by dispatch" : "No open jobs"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground font-medium">
-                Check back in a few minutes
+                {openJobs?.claim_enabled === false
+                  ? "You will be notified when a delivery is assigned to you"
+                  : "New jobs appear here as soon as orders are ready"}
               </p>
             </div>
           )}

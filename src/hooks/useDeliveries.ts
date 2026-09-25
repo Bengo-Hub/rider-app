@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { TaskListResponse, TaskStatus } from "@/types/logistics";
+import type { Task, TaskListResponse, TaskStatus } from "@/types/logistics";
 
 interface UseDeliveriesOptions {
   tenantSlug: string;
@@ -42,5 +42,24 @@ export function useDeliveries({
         `/${tenantSlug}/${basePath}?${params.toString()}`,
       ),
     enabled: !!tenantSlug,
+  });
+}
+
+export interface OpenJobsResponse {
+  data: Task[];
+  /** False when the business assigns every job from its dispatch board. */
+  claim_enabled: boolean;
+}
+
+/**
+ * Jobs no rider holds yet, which this rider can take (GET /riders/me/open-tasks). Polls so a
+ * waiting rider sees new jobs without pulling to refresh.
+ */
+export function useOpenJobs(tenantSlug: string, enabled = true) {
+  return useQuery({
+    queryKey: ["open-jobs", tenantSlug],
+    queryFn: () => api.get<OpenJobsResponse>(`/${tenantSlug}/riders/me/open-tasks?limit=30`),
+    enabled: !!tenantSlug && enabled,
+    refetchInterval: 20_000,
   });
 }

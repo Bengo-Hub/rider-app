@@ -5,21 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
-import { useDeliveries } from "@/hooks/useDeliveries";
-import { useAcceptTask } from "@/hooks/useTaskMutations";
+import { useDeliveries, useOpenJobs } from "@/hooks/useDeliveries";
+import { useAcceptTask, useClaimTask } from "@/hooks/useTaskMutations";
 import { DeliveryCard } from "@/components/delivery/delivery-card";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Package, RefreshCw } from "lucide-react";
-import type { Task, TaskStatus } from "@/types/logistics";
+import type { Task } from "@/types/logistics";
 
-type TabFilter = "all" | "pending" | "assigned";
+// Riders only ever see their own jobs and the open jobs they may take. The old "All" and
+// "Available" tabs read the tenant-wide task list, which showed every other rider's jobs
+// (customer names and addresses) and offered no way to take an unassigned one.
+type TabFilter = "open" | "mine";
 
 const TABS: { label: string; value: TabFilter }[] = [
-  { label: "All", value: "all" },
-  { label: "Available", value: "pending" },
-  { label: "My Tasks", value: "assigned" },
+  { label: "Open jobs", value: "open" },
+  { label: "My jobs", value: "mine" },
 ];
 
 const PAGE_SIZE = 20;
@@ -27,44 +29,36 @@ const PAGE_SIZE = 20;
 export default function DeliveriesPage() {
   const orgSlug = useOrgSlug();
   const router = useRouter();
-  const [tab, setTab] = useState<TabFilter>("all");
+  const [tab, setTab] = useState<TabFilter>("open");
   const [page, setPage] = useState(1);
-  // Accumulated tasks across the pages loaded so far for the current tab.
+  // Accumulated "My jobs" across the pages loaded so far.
   const [items, setItems] = useState<Task[]>([]);
 
-  const statusFilter: TaskStatus | undefined =
-    tab === "pending" ? "pending" : undefined;
-  // "My Tasks" uses the JWT-resolved /riders/me/tasks endpoint (no rider_id);
-  // the backend resolves the rider's fleet member from the token.
-  const mine = tab === "assigned";
+  const openJobs = useOpenJobs(orgSlug, tab === "open");
+  const mine = useDeliveries({
+    tenantSlug: orgSlug,
+    mine: true,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
 
-  const { data, isLoading, isFetching, isError, error, refetch, isRefetching } =
-    useDeliveries({
-      tenantSlug: orgSlug,
-      status: statusFilter,
-      mine,
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    });
-
-  // Reset pagination + accumulated items whenever the tab changes.
   useEffect(() => {
     setPage(1);
     setItems([]);
   }, [tab]);
 
-  // Merge each fetched page into the accumulated list. Page 1 replaces
-  // (covers tab switch + manual refetch); later pages append.
+  // Page 1 replaces (tab switch, refetch); later pages append.
   useEffect(() => {
-    if (!data?.data) return;
+    if (!mine.data?.data) return;
     setItems((prev) => {
-      if (page === 1) return data.data;
+      if (page === 1) return mine.data.data;
       const seen = new Set(prev.map((t) => t.id));
-      return [...prev, ...data.data.filter((t) => !seen.has(t.id))];
+      return [...prev, ...mine.data.data.filter((t) => !seen.has(t.id))];
     });
-  }, [data, page]);
+  }, [mine.data, page]);
 
   const acceptMutation = useAcceptTask(orgSlug);
+  const claimMutation = useClaimTask(orgSlug);
 
   const handleAccept = (taskId: string) => {
     acceptMutation.mutate(
@@ -74,27 +68,39 @@ export default function DeliveriesPage() {
           toast.success("Delivery accepted!");
           router.push(orgRoute(orgSlug, "/active"));
         },
-        onError: (err) => {
-          toast.error(err instanceof Error ? err.message : "Failed to accept");
-        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to accept"),
       },
     );
   };
 
-  const handleRefresh = () => {
-    setPage(1);
-    refetch();
+  const handleClaim = (taskId: string) => {
+    claimMutation.mutate(
+      { taskId },
+      {
+        onSuccess: () => {
+          toast.success("Job taken. Head to the pickup point.");
+          router.push(orgRoute(orgSlug, "/active"));
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : "Could not take this job"),
+      },
+    );
   };
 
-  const hasMore = data?.hasMore ?? false;
-  const total = data?.total ?? items.length;
-  // Show full-screen spinner only on the very first load of a tab.
-  const showInitialLoader = isLoading && items.length === 0;
-  const loadingMore = isFetching && page > 1;
+  const active = tab === "open" ? openJobs : mine;
+  const list: Task[] = tab === "open" ? (openJobs.data?.data ?? []) : items;
+  const claimEnabled = openJobs.data?.claim_enabled ?? true;
+  const hasMore = tab === "mine" && (mine.data?.hasMore ?? false);
+  const total = tab === "mine" ? (mine.data?.total ?? items.length) : list.length;
+  const showInitialLoader = active.isLoading && list.length === 0;
+  const loadingMore = tab === "mine" && mine.isFetching && page > 1;
+
+  const handleRefresh = () => {
+    setPage(1);
+    active.refetch();
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -108,26 +114,21 @@ export default function DeliveriesPage() {
           </div>
           <button
             onClick={handleRefresh}
-            disabled={isRefetching}
+            disabled={active.isRefetching}
             className="flex h-9 w-9 items-center justify-center rounded-lg active:bg-gray-100"
           >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`h-4 w-4 ${active.isRefetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b bg-white px-4 py-2">
         {TABS.map((t) => (
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
             className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-              tab === t.value
-                ? "bg-orange-500 text-white"
-                : "border text-gray-500 active:bg-gray-50"
+              tab === t.value ? "bg-orange-500 text-white" : "border text-gray-500 active:bg-gray-50"
             }`}
           >
             {t.label}
@@ -135,41 +136,41 @@ export default function DeliveriesPage() {
         ))}
       </div>
 
-      {/* Task List */}
       <main className="flex-1 p-4">
         {showInitialLoader ? (
           <div className="flex items-center justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
           </div>
-        ) : isError && items.length === 0 ? (
+        ) : active.isError && list.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="mb-3 h-12 w-12 text-gray-300" />
-            <h2 className="text-base font-semibold text-gray-700">
-              Couldn&apos;t load deliveries
-            </h2>
+            <h2 className="text-base font-semibold text-gray-700">Couldn&apos;t load deliveries</h2>
             <p className="mt-1 max-w-xs text-sm text-gray-500">
-              {error instanceof Error
-                ? error.message
-                : "Something went wrong. Please try again."}
+              {active.error instanceof Error ? active.error.message : "Something went wrong. Please try again."}
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={() => refetch()}
-            >
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => active.refetch()}>
               Retry
             </Button>
           </div>
-        ) : items.length > 0 ? (
+        ) : tab === "open" && !claimEnabled ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Package className="mb-3 h-12 w-12 text-gray-300" />
+            <h2 className="text-base font-semibold text-gray-700">Jobs are assigned by dispatch</h2>
+            <p className="mt-1 max-w-xs text-sm text-gray-500">
+              You will get a notification when a delivery is assigned to you.
+            </p>
+          </div>
+        ) : list.length > 0 ? (
           <div className="space-y-3">
-            {items.map((task) => (
+            {list.map((task) => (
               <DeliveryCard
                 key={task.id}
                 task={task}
-                onAccept={handleAccept}
+                onAccept={tab === "mine" ? handleAccept : undefined}
                 accepting={acceptMutation.isPending}
-                onView={() => router.push(orgRoute(orgSlug, "/active"))}
+                onClaim={tab === "open" ? handleClaim : undefined}
+                claiming={claimMutation.isPending}
+                onView={tab === "mine" ? () => router.push(orgRoute(orgSlug, "/active")) : undefined}
               />
             ))}
 
@@ -191,23 +192,23 @@ export default function DeliveriesPage() {
                   )}
                 </Button>
               ) : null}
-              <p className="py-1 text-center text-xs text-gray-400">
-                Showing {items.length} of {total}
-              </p>
+              {tab === "mine" && (
+                <p className="py-1 text-center text-xs text-gray-400">
+                  Showing {list.length} of {total}
+                </p>
+              )}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="mb-3 h-12 w-12 text-gray-300" />
             <h2 className="text-base font-semibold text-gray-700">
-              No deliveries
+              {tab === "open" ? "No open jobs" : "No deliveries"}
             </h2>
             <p className="mt-1 max-w-xs text-sm text-gray-500">
-              {tab === "pending"
-                ? "No available deliveries right now. Check back soon!"
-                : tab === "assigned"
-                  ? "You have no assigned tasks."
-                  : "New delivery tasks will appear here."}
+              {tab === "open"
+                ? "New jobs appear here as soon as orders are ready. This list refreshes by itself."
+                : "Jobs you take or are assigned will appear here."}
             </p>
           </div>
         )}
