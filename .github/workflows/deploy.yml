@@ -168,15 +168,8 @@ jobs:
           NEXT_PUBLIC_SSO_URL: ${{ secrets.NEXT_PUBLIC_SSO_URL }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXT_PUBLIC_TENANT_SLUG: ${{ secrets.NEXT_PUBLIC_TENANT_SLUG }}
-          # Web push (FCM) public client config; push stays off while these are unset.
+          # Push (FCM) is configured centrally in notifications-service; the app only needs its URL.
           NEXT_PUBLIC_NOTIFICATIONS_API_URL: ${{ secrets.NEXT_PUBLIC_NOTIFICATIONS_API_URL }}
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_VAPID_KEY }}
         run: |
           chmod +x build.sh
           ./build.sh

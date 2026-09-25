@@ -61,18 +61,27 @@ function PrefRow({
 // browser granted permission (the old banner stopped there, so no push could ever arrive).
 function PushPermissionBanner() {
   const { pushGranted, setPushGranted } = useNotificationPrefs();
+  const [checked, setChecked] = useState(false);
   const [supported, setSupported] = useState(false);
   const [permState, setPermState] = useState<NotificationPermission>("default");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (isPushSupported()) {
+    let cancelled = false;
+    isPushSupported().then((ok) => {
+      if (cancelled) return;
+      setChecked(true);
+      if (!ok) return;
       setSupported(true);
       setPermState(Notification.permission);
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  if (!checked) return null;
   if (!supported) {
     return (
       <div className="flex items-start gap-2 rounded-xl border px-4 py-3 mb-4 text-xs text-muted-foreground">

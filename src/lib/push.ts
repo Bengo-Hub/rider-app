@@ -1,43 +1,49 @@
-// Web push for riders (FCM), same setup as notifications-ui. Firebase web config values are
-// public client config, not secrets (the service-account key stays in notifications-api). A
-// deployment without them simply has no push; riders still see new jobs in the app.
+// Web push for riders (FCM). The Firebase setup lives centrally in notifications-service: this app
+// asks it for the browser config at runtime (GET /push/web-config, the tenant's own Firebase
+// project or the platform's), so the app carries no Firebase build settings. When push is not
+// set up there, riders still see new jobs in Open jobs.
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getMessaging, getToken, type Messaging } from "firebase/messaging";
+import { getMessaging, getToken } from "firebase/messaging";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ?? "";
-const NOTIFICATIONS_API =
-  process.env.NEXT_PUBLIC_NOTIFICATIONS_API_URL ?? "https://notificationsapi.codevertexafrica.com";
+const NOTIFICATIONS_API = (
+  process.env.NEXT_PUBLIC_NOTIFICATIONS_API_URL ?? "https://notificationsapi.codevertexafrica.com"
+).replace(/\/$/, "");
 
-export function isPushConfigured(): boolean {
-  return !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagingSenderId && vapidKey);
+interface WebPushConfig {
+  api_key: string;
+  auth_domain?: string;
+  project_id: string;
+  storage_bucket?: string;
+  messaging_sender_id: string;
+  app_id: string;
+  vapid_key: string;
 }
 
-export function isPushSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window &&
-    isPushConfigured()
-  );
+let configPromise: Promise<WebPushConfig | null> | null = null;
+
+function tenantRef(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("tenantSlug") || window.location.pathname.split("/")[1] || "";
 }
 
-let app: FirebaseApp | null = null;
-let messaging: Messaging | null = null;
+/** The Firebase browser config for this tenant, or null when push is not set up. Cached per page load. */
+export function loadPushConfig(): Promise<WebPushConfig | null> {
+  if (!configPromise) {
+    const ref = tenantRef();
+    configPromise = fetch(`${NOTIFICATIONS_API}/api/v1/push/web-config?tenant=${encodeURIComponent(ref)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => (body?.enabled ? (body.config as WebPushConfig) : null))
+      .catch(() => null);
+  }
+  return configPromise;
+}
 
-function firebaseMessaging(): Messaging | null {
-  if (!isPushSupported()) return null;
-  app = app ?? getApps()[0] ?? initializeApp(firebaseConfig);
-  messaging = messaging ?? getMessaging(app);
-  return messaging;
+/** Browser can do web push and the business has push set up. */
+export async function isPushSupported(): Promise<boolean> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return false;
+  }
+  return (await loadPushConfig()) !== null;
 }
 
 function accessToken(): string | null {
@@ -49,20 +55,30 @@ function accessToken(): string | null {
 }
 
 /**
- * Gets this device's FCM token (through the app's service worker, which shows the notification
- * and opens the job when tapped) and registers it with notifications-api for the signed-in rider.
- * Call only after notification permission is granted. Returns true when registered.
+ * Gets this device's FCM token (through the app's service worker, which shows the alert and opens
+ * the job when tapped) and registers it with notifications-api for the signed-in rider. Call only
+ * after notification permission is granted. Returns true when registered.
  */
 export async function registerRiderPush(): Promise<boolean> {
-  const m = firebaseMessaging();
+  const cfg = await loadPushConfig();
   const bearer = accessToken();
-  if (!m || !bearer || Notification.permission !== "granted") return false;
+  if (!cfg || !bearer || Notification.permission !== "granted") return false;
   try {
+    const app: FirebaseApp =
+      getApps()[0] ??
+      initializeApp({
+        apiKey: cfg.api_key,
+        authDomain: cfg.auth_domain,
+        projectId: cfg.project_id,
+        storageBucket: cfg.storage_bucket,
+        messagingSenderId: cfg.messaging_sender_id,
+        appId: cfg.app_id,
+      });
     const registration = await navigator.serviceWorker.register("/sw.js");
     await navigator.serviceWorker.ready;
-    const token = await getToken(m, { vapidKey, serviceWorkerRegistration: registration });
+    const token = await getToken(getMessaging(app), { vapidKey: cfg.vapid_key, serviceWorkerRegistration: registration });
     if (!token) return false;
-    const res = await fetch(`${NOTIFICATIONS_API.replace(/\/$/, "")}/api/v1/push/tokens`, {
+    const res = await fetch(`${NOTIFICATIONS_API}/api/v1/push/tokens`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
       body: JSON.stringify({ token, platform: "web", provider: "fcm" }),

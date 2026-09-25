@@ -13,11 +13,13 @@ export function PushTokenSync() {
   const setPushGranted = useNotificationPrefs((s) => s.setPushGranted);
 
   useEffect(() => {
-    if (!isPushSupported() || Notification.permission !== "granted") return;
+    if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") return;
     let cancelled = false;
-    registerRiderPush().then((ok) => {
+    (async () => {
+      if (!(await isPushSupported())) return;
+      const ok = await registerRiderPush();
       if (!cancelled) setPushGranted(ok);
-    });
+    })();
     return () => {
       cancelled = true;
     };
