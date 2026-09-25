@@ -19,16 +19,20 @@ const GoogleMapEmbed = dynamic(
 );
 
 export interface ProofOfDelivery {
-  delivery_code?: string;
   confirmation_code?: string;
   photo_url?: string;
   recipient_name?: string;
   notes?: string;
   latitude?: number;
   longitude?: number;
+  /** Cash on delivery: amount taken, how it was paid and (for M-Pesa) the confirmation code. */
   amount_collected?: number;
-  collection_method?: string;
+  collection_method?: "cash" | "mpesa";
+  collection_reference?: string;
 }
+
+/** M-Pesa confirmation codes are 10 letters and digits (e.g. SGH7K2L9QP). */
+const MPESA_CODE = /^[A-Z0-9]{10}$/;
 
 interface ActiveDeliveryViewProps {
   task: Task;
@@ -80,12 +84,21 @@ export function ActiveDeliveryView({
   const nextStatus = NEXT_STATUS[task.status];
   const currentStepIdx = STEP_ORDER.indexOf(task.status);
   const [showProofForm, setShowProofForm] = useState(false);
+  // Cash to collect: the task column, or the metadata an order-created task carries.
+  const codAmount = task.cash_on_delivery || Number(task.metadata?.cash_on_delivery ?? 0) || 0;
+  const isCOD = codAmount > 0;
   const [proofData, setProofData] = useState<ProofOfDelivery>({
-    delivery_code: "",
     confirmation_code: "",
     recipient_name: task.customer_name || "",
     notes: "",
+    // Prefilled so a rider who took exactly the amount due does not have to retype it (the field
+    // used to show the amount but send nothing, and the delivery was rejected).
+    ...(codAmount > 0 ? { amount_collected: codAmount, collection_method: "cash" as const } : {}),
   });
+  const codReady =
+    !isCOD ||
+    ((proofData.amount_collected ?? 0) >= codAmount &&
+      (proofData.collection_method !== "mpesa" || MPESA_CODE.test(proofData.collection_reference ?? "")));
 
   const openInMaps = (lat: number | null, lng: number | null, address: string) => {
     if (lat && lng) {
@@ -96,8 +109,6 @@ export function ActiveDeliveryView({
   };
 
   const isPickupPhase = ["accepted", "en_route_pickup", "arrived_pickup"].includes(task.status);
-  const codAmount = (task.metadata?.cash_on_delivery as number) ?? 0;
-  const isCOD = codAmount > 0;
 
   return (
     <div className="space-y-4">
@@ -108,10 +119,11 @@ export function ActiveDeliveryView({
             COD
           </div>
           <div>
-            <p className="text-sm font-bold text-amber-900">Cash on Delivery</p>
+            <p className="text-sm font-bold text-amber-900">Collect payment at the door</p>
             <p className="text-lg font-bold text-amber-800">
               KES {codAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
+            <p className="text-xs text-amber-700">Cash, or M-Pesa to the business (note the M-Pesa code).</p>
           </div>
         </div>
       )}
@@ -194,7 +206,9 @@ export function ActiveDeliveryView({
                 <MapPin className="h-4 w-4 text-green-600" />
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">PICKUP</p>
+                <p className="text-xs font-medium text-gray-500">
+                  PICKUP{task.order_number ? ` · ask for order ${task.order_number}` : ""}
+                </p>
                 <p className="text-sm font-medium">{task.pickup_address || "Pickup location"}</p>
                 {task.pickup_contact_name && (
                   <p className="mt-1 text-xs text-gray-600">{task.pickup_contact_name}</p>
@@ -270,7 +284,10 @@ export function ActiveDeliveryView({
         <div className="rounded-xl border p-4">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-gray-500" />
-            <p className="text-sm font-medium">Order Details</p>
+            <p className="text-sm font-medium">
+              {isPickupPhase ? "Check the bag before you leave" : "Order details"}
+              {task.item_count ? ` (${task.item_count} item${task.item_count === 1 ? "" : "s"})` : ""}
+            </p>
           </div>
           {task.items_description && (
             <p className="mt-2 text-sm text-gray-600">{task.items_description}</p>
@@ -323,7 +340,8 @@ export function ActiveDeliveryView({
                 Delivery Confirmation Code <span className="text-red-500">*</span>
               </label>
               <p className="mb-1 text-xs text-gray-500">
-                Ask the customer for their delivery code (sent to them by email).
+                Ask the customer for the 6-digit delivery code on their order page or confirmation
+                message. Hand the order over only once the code is accepted.
               </p>
               <input
                 type="text"
@@ -339,22 +357,6 @@ export function ActiveDeliveryView({
                 placeholder="Enter 6-digit code"
                 maxLength={6}
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base tracking-[0.5em] focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
-              />
-            </div>
-
-            {/* Delivery Code */}
-            <div>
-              <label className="block text-xs font-semibold uppercase text-gray-500 mb-1">
-                Delivery Code (from customer)
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={proofData.delivery_code ?? ""}
-                onChange={(e) => setProofData((p) => ({ ...p, delivery_code: e.target.value }))}
-                placeholder="Enter 4-digit code"
-                maxLength={6}
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
               />
             </div>
 
@@ -423,7 +425,49 @@ export function ActiveDeliveryView({
             {isCOD && (
               <div>
                 <label className="block text-xs font-semibold uppercase text-amber-700 mb-1">
-                  Cash Collected (KES) *
+                  How did the customer pay? *
+                </label>
+                <div className="mb-3 grid grid-cols-2 gap-2">
+                  {(["cash", "mpesa"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setProofData((p) => ({ ...p, collection_method: m }))}
+                      className={`min-h-11 rounded-xl border-2 px-3 text-sm font-semibold ${
+                        proofData.collection_method === m
+                          ? "border-amber-500 bg-amber-500 text-white"
+                          : "border-amber-200 bg-white text-amber-800"
+                      }`}
+                    >
+                      {m === "cash" ? "Cash" : "M-Pesa"}
+                    </button>
+                  ))}
+                </div>
+                {proofData.collection_method === "mpesa" && (
+                  <div className="mb-3">
+                    <label className="block text-xs font-semibold uppercase text-amber-700 mb-1">
+                      M-Pesa code *
+                    </label>
+                    <input
+                      type="text"
+                      autoCapitalize="characters"
+                      value={proofData.collection_reference ?? ""}
+                      onChange={(e) =>
+                        setProofData((p) => ({
+                          ...p,
+                          collection_reference: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10),
+                        }))
+                      }
+                      placeholder="e.g. SGH7K2L9QP"
+                      className="w-full rounded-xl border-2 border-amber-300 bg-white px-4 py-3 text-base font-semibold tracking-wider focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                    />
+                    <p className="mt-1 text-xs text-amber-600">
+                      Check the business received it (the customer&apos;s message shows the business name) and enter the code.
+                    </p>
+                  </div>
+                )}
+                <label className="block text-xs font-semibold uppercase text-amber-700 mb-1">
+                  Amount received (KES) *
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">KES</span>
@@ -482,14 +526,14 @@ export function ActiveDeliveryView({
                   } else {
                     onSubmitProof(task.id, proofData);
                   }
-                } else {
-                  onAdvanceStatus(task.id, "completed" as TaskStatus);
                 }
               }}
               disabled={
+                !onSubmitProof ||
                 submittingProof ||
                 advancing ||
-                (proofData.confirmation_code ?? "").length !== 6
+                (proofData.confirmation_code ?? "").length !== 6 ||
+                !codReady
               }
               className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3.5 text-base font-semibold text-white active:bg-green-700 disabled:opacity-50"
             >

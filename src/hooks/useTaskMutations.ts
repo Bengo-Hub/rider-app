@@ -69,13 +69,16 @@ export function useSubmitProof(tenantSlug: string) {
     }: {
       taskId: string;
       proof: {
-        delivery_code?: string;
         confirmation_code?: string;
         photo_url?: string;
         recipient_name?: string;
         notes?: string;
         latitude?: number;
         longitude?: number;
+        /** Cash-on-delivery: amount taken, how ("cash" | "mpesa") and the M-Pesa code. */
+        amount_collected?: number;
+        collection_method?: "cash" | "mpesa";
+        collection_reference?: string;
       };
     }) =>
       api.post(`/${tenantSlug}/tasks/${taskId}/pod`, proof),

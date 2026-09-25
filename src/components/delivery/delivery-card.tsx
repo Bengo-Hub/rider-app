@@ -65,7 +65,10 @@ export function DeliveryCard({ task, onAccept, onView, accepting }: DeliveryCard
           </span>
         </div>
 
-        {task.status === "pending" && onAccept && (
+        {/* A rider accepts a job offered to them (assigned by dispatch or auto-assign). Unassigned
+            "pending" jobs are dispatched by the outlet or the dispatcher, so they show no button:
+            accepting one used to fail with an invalid transition every time. */}
+        {task.status === "assigned" && onAccept && (
           <button
             onClick={(e) => {
               e.stopPropagation();

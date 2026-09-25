@@ -7,6 +7,8 @@ export type TaskStatus =
   | "picked_up"
   | "en_route_dropoff"
   | "arrived_dropoff"
+  | "en_route"
+  | "delivered"
   | "completed"
   | "cancelled"
   | "failed";
@@ -39,6 +41,11 @@ export interface Task {
   instructions: string;
   items_description: string;
   item_count: number;
+  /** Source order number (e.g. ORD-260925-000123) the outlet staff know the order by. */
+  order_number?: string;
+  payment_method?: string;
+  /** Cash (or M-Pesa to the business) the rider collects at the door; 0 when prepaid. */
+  cash_on_delivery?: number;
   distance_km: number | null;
   eta_minutes: number | null;
   eta_at: string | null;
@@ -155,6 +162,8 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   picked_up: "Picked Up",
   en_route_dropoff: "Driving to destination",
   arrived_dropoff: "At Drop-off",
+  en_route: "On the way",
+  delivered: "Delivered",
   completed: "Completed",
   cancelled: "Cancelled",
   failed: "Failed",

@@ -12,6 +12,8 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
   picked_up: "bg-orange-100 text-orange-700",
   en_route_dropoff: "bg-orange-200 text-orange-800",
   arrived_dropoff: "bg-emerald-100 text-emerald-700",
+  en_route: "bg-orange-200 text-orange-800",
+  delivered: "bg-green-100 text-green-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
   failed: "bg-red-200 text-red-800",

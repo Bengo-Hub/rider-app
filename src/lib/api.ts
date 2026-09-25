@@ -74,19 +74,38 @@ async function request<T>(
           });
           if (retryRes.ok) return retryRes.json();
           if (retryRes.status === 401 && on401Callback) on401Callback();
-          const retryBody = await retryRes.json().catch(() => null);
-          throw new Error(retryBody?.message ?? `API error ${retryRes.status}`);
+          throw new Error(await errorMessage(retryRes));
         }
 
         // Refresh failed — fire logout callback
         if (on401Callback) on401Callback();
       }
     }
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.message ?? `API error ${res.status}`);
+    throw new Error(await errorMessage(res));
   }
 
   return res.json();
+}
+
+/**
+ * errorMessage reads a failed response's reason. logistics-api answers most rejections as plain
+ * text (http.Error), so a JSON-only parse left riders with a bare "API error 400" instead of
+ * "enter the 10-character M-Pesa code" or "this delivery is assigned to another rider".
+ */
+async function errorMessage(res: Response): Promise<string> {
+  const text = await res.text().catch(() => "");
+  if (text) {
+    try {
+      const body = JSON.parse(text);
+      const msg = body?.message ?? body?.error;
+      if (typeof msg === "string" && msg) return msg;
+    } catch {
+      // not JSON: use the text itself
+    }
+    const plain = text.trim().replace(/^tasks:\s*/i, "");
+    if (plain && plain.length < 300) return plain.charAt(0).toUpperCase() + plain.slice(1);
+  }
+  return `Request failed (${res.status})`;
 }
 
 export const api = {

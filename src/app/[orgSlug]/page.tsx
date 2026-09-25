@@ -32,14 +32,21 @@ export default function RiderDashboard() {
     riderId: user?.id,
   });
 
-  const { data: completedToday } = useDeliveries({
+  // This rider's own deliveries (tasks end in "delivered"; "completed" is never used), counted for
+  // today only. The previous query read every rider's tasks in a status nothing reaches, so it
+  // always showed 0.
+  const { data: myDelivered } = useDeliveries({
     tenantSlug: orgSlug,
-    status: "completed",
-    riderId: user?.id,
-    limit: 50,
+    status: "delivered",
+    mine: true,
+    limit: 100,
   });
 
-  const completedCount = completedToday?.data?.length ?? 0;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const completedCount = (myDelivered?.data ?? []).filter(
+    (t) => new Date(t.completed_at ?? t.updated_at).getTime() >= todayStart.getTime(),
+  ).length;
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
@@ -55,7 +62,7 @@ export default function RiderDashboard() {
               <p className="text-sm font-bold opacity-80">Deliveries</p>
             </div>
             <p className="mt-1 text-[10px] font-black uppercase tracking-tighter opacity-70">
-              Target: 10 deliveries
+              Delivered today
             </p>
           </div>
           {/* Decorative background element */}
