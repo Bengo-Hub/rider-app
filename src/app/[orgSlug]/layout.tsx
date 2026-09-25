@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { OrgSlugProvider } from "@/providers/org-slug-provider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PWAUpdateBanner } from "@/components/pwa/pwa-update-banner";
+import { PushTokenSync } from "@/components/pwa/push-token-sync";
 
 export async function generateMetadata({
   params,
@@ -28,7 +29,10 @@ export default async function OrgSlugLayout({
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <OrgSlugProvider orgSlug={orgSlug}>
         <PWAUpdateBanner />
-        <ProtectedRoute>{children}</ProtectedRoute>
+        <ProtectedRoute>
+          <PushTokenSync />
+          {children}
+        </ProtectedRoute>
       </OrgSlugProvider>
     </ThemeProvider>
   );

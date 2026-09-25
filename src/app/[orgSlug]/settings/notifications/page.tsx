@@ -8,6 +8,7 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
 import { useNotificationPrefs, type NotificationPrefs } from "@/hooks/use-notification-prefs";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { isPushSupported, registerRiderPush } from "@/lib/push";
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 
@@ -56,23 +57,42 @@ function PrefRow({
 
 // ─── Push Permission Banner ───────────────────────────────────────────────────
 
+// "Enabled" means this device is registered for push with notifications-api, not merely that the
+// browser granted permission (the old banner stopped there, so no push could ever arrive).
 function PushPermissionBanner() {
   const { pushGranted, setPushGranted } = useNotificationPrefs();
   const [supported, setSupported] = useState(false);
   const [permState, setPermState] = useState<NotificationPermission>("default");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
+    if (isPushSupported()) {
       setSupported(true);
       setPermState(Notification.permission);
-      if (Notification.permission === "granted") {
-        setPushGranted(true);
-      }
     }
-  }, [setPushGranted]);
+  }, []);
 
-  if (!supported || permState === "denied") return null;
-  if (pushGranted || permState === "granted") {
+  if (!supported) {
+    return (
+      <div className="flex items-start gap-2 rounded-xl border px-4 py-3 mb-4 text-xs text-muted-foreground">
+        <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          Push alerts are not available on this device or app yet. New jobs still appear under
+          Deliveries &gt; Open jobs, which refreshes by itself.
+        </span>
+      </div>
+    );
+  }
+  if (permState === "denied") {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-4 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+        Notifications are blocked for this app. Allow them in your browser or phone settings to get
+        new job alerts.
+      </div>
+    );
+  }
+  if (pushGranted && permState === "granted") {
     return (
       <div className="flex items-center gap-2 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 mb-4">
         <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
@@ -84,9 +104,14 @@ function PushPermissionBanner() {
   }
 
   const requestPermission = async () => {
+    setBusy(true);
+    setFailed(false);
     const result = await Notification.requestPermission();
     setPermState(result);
-    if (result === "granted") setPushGranted(true);
+    const registered = result === "granted" && (await registerRiderPush());
+    setPushGranted(registered);
+    setFailed(result === "granted" && !registered);
+    setBusy(false);
   };
 
   return (
@@ -105,11 +130,15 @@ function PushPermissionBanner() {
           <button
             type="button"
             onClick={requestPermission}
-            className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white active:bg-orange-600"
+            disabled={busy}
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white active:bg-orange-600 disabled:opacity-60"
           >
             <Bell className="h-3.5 w-3.5" />
-            Allow Notifications
+            {busy ? "Setting up..." : "Allow Notifications"}
           </button>
+          {failed && (
+            <p className="mt-2 text-xs text-red-600">Could not register this device. Check your connection and try again.</p>
+          )}
         </div>
       </div>
     </div>
