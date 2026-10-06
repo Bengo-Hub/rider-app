@@ -25,7 +25,7 @@
 | `/login` | Login | Email/password auth via SSO |
 | `/[orgSlug]` | Dashboard | Today's summary, active delivery, quick actions |
 | `/[orgSlug]/deliveries` | Delivery Queue | Available/assigned tasks with accept |
-| `/[orgSlug]/active` | Active Delivery | Status progression, navigation, cancel |
+| `/[orgSlug]/active` | Active Delivery | Status progression, navigation, hand back before pickup, report failed delivery |
 | `/[orgSlug]/earnings` | Earnings | Completed deliveries history |
 | `/[orgSlug]/settings` | Settings | Profile, logout |
 
@@ -74,3 +74,15 @@ Status updates → PUT /tasks/{id}/status → invalidates query cache
 - Offline task queue
 - Earnings aggregation API
 - Rider shift toggle
+
+## Delivery workflow rules (2026-10-06)
+
+- Riders never cancel a customer's delivery. Before pickup a rider hands the job back with a
+  reason (`POST /{tenant}/riders/me/tasks/{id}/decline`); it returns to the open pool and, with
+  auto-assign on, goes to the next nearest rider, never back to the same rider.
+- After pickup a rider can only report a failed delivery with a reason (`PATCH .../status`
+  `failed`). The outlet is alerted and the rider brings the order back.
+- The proof-of-delivery photo is uploaded first (`/{tenant}/media/upload`, private, signed URL)
+  and only its URL is sent with the proof. Inline base64 photos are no longer stored.
+- Riders cannot list the dispatch board (`GET /tasks` is dispatcher only); they use
+  `riders/me/tasks` and `riders/me/open-tasks`.

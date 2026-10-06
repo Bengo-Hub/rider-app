@@ -5,7 +5,7 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
 import { useAuthStore } from "@/store/auth-store";
 import { useActiveDelivery } from "@/hooks/useActiveDelivery";
-import { useUpdateTaskStatus, useCancelTask, useSubmitProof } from "@/hooks/useTaskMutations";
+import { useUpdateTaskStatus, useDeclineTask, useReportFailedDelivery, useSubmitProof } from "@/hooks/useTaskMutations";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
 import { useDeliveryRoute } from "@/hooks/use-delivery-route";
 import { ActiveDeliveryView } from "@/components/delivery/active-delivery-view";
@@ -61,7 +61,8 @@ export default function ActiveDeliveryPage() {
   });
 
   const statusMutation = useUpdateTaskStatus(orgSlug);
-  const cancelMutation = useCancelTask(orgSlug);
+  const declineMutation = useDeclineTask(orgSlug);
+  const failedMutation = useReportFailedDelivery(orgSlug);
   const proofMutation = useSubmitProof(orgSlug);
 
   const handleAdvance = (taskId: string, nextStatus: TaskStatus) => {
@@ -78,21 +79,20 @@ export default function ActiveDeliveryPage() {
     );
   };
 
-  const handleCancel = (taskId: string) => {
-    if (!confirm("Are you sure you want to cancel this delivery?")) return;
-    cancelMutation.mutate(
-      { taskId, reason: "Cancelled by rider" },
+  const handleRelease = (taskId: string, kind: "decline" | "failed", reason: string) => {
+    const mutation = kind === "decline" ? declineMutation : failedMutation;
+    mutation.mutate(
+      { taskId, reason },
       {
         onSuccess: () => {
-          toast.success("Delivery cancelled");
+          toast.success(kind === "decline" ? "Job handed back" : "Failed delivery reported to the outlet");
         },
         onError: (err) => {
-          toast.error(err instanceof Error ? err.message : "Cancel failed");
+          toast.error(err instanceof Error ? err.message : "Could not send. Try again.");
         },
       },
     );
   };
-
   const handleSubmitProof = (taskId: string, proof: ProofOfDelivery) => {
     proofMutation.mutate(
       { taskId, proof },
@@ -130,7 +130,8 @@ export default function ActiveDeliveryPage() {
           <ActiveDeliveryView
             task={activeTask}
             onAdvanceStatus={handleAdvance}
-            onCancel={handleCancel}
+            onRelease={handleRelease}
+            releasing={declineMutation.isPending || failedMutation.isPending}
             onSubmitProof={handleSubmitProof}
             advancing={statusMutation.isPending}
             submittingProof={proofMutation.isPending}

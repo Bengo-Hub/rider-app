@@ -59,16 +59,32 @@ export function useClaimTask(tenantSlug: string) {
   });
 }
 
-export function useCancelTask(tenantSlug: string) {
+/**
+ * Hand a job back before collecting the order (bike trouble, too far, shift over). The job goes
+ * back to the open pool and to the next rider. Riders never cancel the customer's delivery.
+ */
+export function useDeclineTask(tenantSlug: string) {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: ({ taskId, reason }: { taskId: string; reason: string }) =>
-      api.patch<{ message: string }>(
-        `/${tenantSlug}/tasks/${taskId}/status`,
-        { status: "cancelled", reason },
-      ),
-    onSuccess: () => {
+      api.post<Task>(`/${tenantSlug}/riders/me/tasks/${taskId}/decline`, { reason }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["open-jobs"] });
+      qc.invalidateQueries({ queryKey: ["deliveries"] });
+      qc.invalidateQueries({ queryKey: ["active-delivery"] });
+    },
+  });
+}
+
+/** Report that an order already collected could not be delivered; the outlet is alerted. */
+export function useReportFailedDelivery(tenantSlug: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, reason }: { taskId: string; reason: string }) =>
+      api.patch<Task>(`/${tenantSlug}/tasks/${taskId}/status`, { status: "failed", reason }),
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["deliveries"] });
       qc.invalidateQueries({ queryKey: ["active-delivery"] });
     },

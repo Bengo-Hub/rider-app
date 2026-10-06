@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    // e2e/ holds Playwright specs (pnpm test:e2e); vitest cannot run them.
+    include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
     },

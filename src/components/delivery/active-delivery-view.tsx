@@ -7,6 +7,8 @@ import { STATUS_LABELS, NEXT_STATUS } from "@/types/logistics";
 import { StatusBadge } from "./status-badge";
 import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X, WifiOff } from "lucide-react";
 import { googleMapsEmbedAvailable } from "@/components/map/google-map-embed";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const DeliveryMap = dynamic(
   () => import("@/components/map/delivery-map").then((m) => ({ default: m.DeliveryMap })),
@@ -37,7 +39,12 @@ const MPESA_CODE = /^[A-Z0-9]{10}$/;
 interface ActiveDeliveryViewProps {
   task: Task;
   onAdvanceStatus: (taskId: string, nextStatus: TaskStatus) => void;
-  onCancel: (taskId: string) => void;
+  /**
+   * Hand the job back before pickup ("decline") or report that a collected order could not be
+   * delivered ("failed"). Riders never cancel the customer's delivery.
+   */
+  onRelease: (taskId: string, kind: "decline" | "failed", reason: string) => void;
+  releasing?: boolean;
   onSubmitProof?: (taskId: string, proof: ProofOfDelivery) => void;
   advancing?: boolean;
   submittingProof?: boolean;
@@ -69,7 +76,8 @@ const STEP_ORDER: TaskStatus[] = [
 export function ActiveDeliveryView({
   task,
   onAdvanceStatus,
-  onCancel,
+  onRelease,
+  releasing,
   onSubmitProof,
   advancing,
   submittingProof,
@@ -84,6 +92,9 @@ export function ActiveDeliveryView({
   const nextStatus = NEXT_STATUS[task.status];
   const currentStepIdx = STEP_ORDER.indexOf(task.status);
   const [showProofForm, setShowProofForm] = useState(false);
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [releaseReason, setReleaseReason] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
   // Cash to collect: the task column, or the metadata an order-created task carries.
   const codAmount = task.cash_on_delivery || Number(task.metadata?.cash_on_delivery ?? 0) || 0;
   const isCOD = codAmount > 0;
@@ -108,7 +119,47 @@ export function ActiveDeliveryView({
     }
   };
 
-  const isPickupPhase = ["accepted", "en_route_pickup", "arrived_pickup"].includes(task.status);
+  const isPickupPhase = ["assigned", "accepted", "en_route_pickup", "arrived_pickup"].includes(task.status);
+  // Before pickup the rider can hand the job to someone else; after it, only report a failure.
+  const releaseKind: "decline" | "failed" = isPickupPhase ? "decline" : "failed";
+  const releaseReasons =
+    releaseKind === "decline"
+      ? ["Bike or vehicle problem", "Too far from me", "Ending my shift", "Order not ready at the outlet"]
+      : ["Customer not answering", "Wrong or unreachable address", "Customer refused the order", "Could not collect payment"];
+
+  /** Upload the proof photo (compressed) and keep its URL; the photo itself never goes in the task. */
+  const uploadPhoto = (file: File) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1280;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(
+        async (blob) => {
+          if (!blob) return;
+          const form = new FormData();
+          form.append("file", blob, "proof-of-delivery.jpg");
+          setPhotoUploading(true);
+          try {
+            const res = await api.upload<{ url: string }>("/media/upload", form);
+            setProofData((p) => ({ ...p, photo_url: res.url }));
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Photo upload failed. Try again, or complete without a photo.");
+          } finally {
+            setPhotoUploading(false);
+          }
+        },
+        "image/jpeg",
+        0.8,
+      );
+    };
+    img.src = objectUrl;
+  };
 
   return (
     <div className="space-y-4">
@@ -381,7 +432,9 @@ export function ActiveDeliveryView({
               </label>
               <label className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-600 active:bg-gray-50">
                 <Camera className="h-5 w-5" />
-                {proofData.photo_url ? (
+                {photoUploading ? (
+                  <span>Uploading photo...</span>
+                ) : proofData.photo_url ? (
                   <span className="text-green-600 font-semibold">✓ Photo captured</span>
                 ) : (
                   "Take a photo"
@@ -393,22 +446,8 @@ export function ActiveDeliveryView({
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (!file) return;
-                    // Compress and convert to base64 for storage in task metadata
-                    const img = new Image();
-                    const objectUrl = URL.createObjectURL(file);
-                    img.onload = () => {
-                      const MAX = 800;
-                      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-                      const canvas = document.createElement("canvas");
-                      canvas.width = Math.round(img.width * scale);
-                      canvas.height = Math.round(img.height * scale);
-                      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-                      const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
-                      URL.revokeObjectURL(objectUrl);
-                      setProofData((p) => ({ ...p, photo_url: dataUrl }));
-                    };
-                    img.src = objectUrl;
+                    if (file) uploadPhoto(file);
+                    e.target.value = "";
                   }}
                 />
               </label>
@@ -532,6 +571,7 @@ export function ActiveDeliveryView({
                 !onSubmitProof ||
                 submittingProof ||
                 advancing ||
+                photoUploading ||
                 (proofData.confirmation_code ?? "").length !== 6 ||
                 !codReady
               }
@@ -542,13 +582,66 @@ export function ActiveDeliveryView({
           </div>
         )}
 
-        {!["completed", "cancelled", "failed"].includes(task.status) && !showProofForm && (
+        {!["delivered", "completed", "cancelled", "failed"].includes(task.status) && !showProofForm && !releaseOpen && (
           <button
-            onClick={() => onCancel(task.id)}
+            onClick={() => {
+              setReleaseReason("");
+              setReleaseOpen(true);
+            }}
             className="w-full min-h-[44px] rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 active:bg-red-50"
           >
-            Cancel Delivery
+            {releaseKind === "decline" ? "I can't take this job" : "Delivery failed"}
           </button>
+        )}
+
+        {releaseOpen && (
+          <div className="space-y-3 rounded-xl border-2 border-red-200 bg-red-50 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">
+                {releaseKind === "decline" ? "Hand this job back" : "Report a failed delivery"}
+              </h3>
+              <button
+                onClick={() => setReleaseOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-red-100"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-600">
+              {releaseKind === "decline"
+                ? "The job goes to another rider. The customer's order is not cancelled."
+                : "The outlet is told straight away. Keep the order safe and bring it back to the outlet."}
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              {releaseReasons.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setReleaseReason(r)}
+                  className={`min-h-11 rounded-xl border-2 px-3 text-left text-sm font-medium ${
+                    releaseReason === r ? "border-red-500 bg-red-500 text-white" : "border-red-200 bg-white text-red-800"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={releaseReasons.includes(releaseReason) ? "" : releaseReason}
+              onChange={(e) => setReleaseReason(e.target.value)}
+              placeholder="Or describe what happened"
+              rows={2}
+              className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:border-red-500 focus:outline-none"
+            />
+            <button
+              onClick={() => onRelease(task.id, releaseKind, releaseReason.trim())}
+              disabled={!releaseReason.trim() || releasing}
+              className="flex w-full min-h-[52px] items-center justify-center rounded-xl bg-red-600 px-4 py-3.5 text-base font-semibold text-white active:bg-red-700 disabled:opacity-50"
+            >
+              {releasing ? "Sending..." : releaseKind === "decline" ? "Hand back the job" : "Report failed delivery"}
+            </button>
+          </div>
         )}
       </div>
     </div>
