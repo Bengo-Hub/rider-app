@@ -47,6 +47,11 @@ export interface Task {
   /** Cash (or M-Pesa to the business) the rider collects at the door; 0 when prepaid. */
   cash_on_delivery?: number;
   distance_km: number | null;
+  /** Delivery area of the drop-off (e.g. "Bugengi"), set by the checkout quote or intake. */
+  zone_id?: string;
+  zone_name?: string;
+  /** Delivery fee the customer paid for this trip. */
+  delivery_fee?: number;
   eta_minutes: number | null;
   eta_at: string | null;
   assigned_at: string | null;

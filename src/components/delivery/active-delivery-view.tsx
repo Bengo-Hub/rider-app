@@ -330,6 +330,20 @@ export function ActiveDeliveryView({
         </div>
       </div>
 
+      {/* Delivery area and trip */}
+      {(task.zone_name || task.distance_km) && (
+        <div className="flex items-center justify-between rounded-xl border p-4 text-sm">
+          <div>
+            <p className="text-xs text-gray-500">Delivery area</p>
+            <p className="font-medium">{task.zone_name || "Outside the named areas (distance rate)"}</p>
+          </div>
+          <div className="text-right">
+            {task.distance_km ? <p className="font-medium">{task.distance_km.toFixed(1)} km</p> : null}
+            {task.delivery_fee ? <p className="text-xs text-gray-500">Delivery fee KES {Math.round(task.delivery_fee).toLocaleString()}</p> : null}
+          </div>
+        </div>
+      )}
+
       {/* Order Details */}
       {(task.items_description || task.instructions) && (
         <div className="rounded-xl border p-4">

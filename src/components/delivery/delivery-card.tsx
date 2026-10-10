@@ -34,11 +34,14 @@ export function DeliveryCard({ task, onAccept, onView, accepting, onClaim, claim
             {task.customer_name || "Customer"}
           </p>
         </div>
-        {task.distance_km && (
-          <span className="ml-2 text-xs text-gray-500">
-            {task.distance_km.toFixed(1)} km
-          </span>
-        )}
+        <div className="ml-2 flex shrink-0 flex-col items-end gap-1">
+          {task.zone_name && (
+            <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700">
+              {task.zone_name}
+            </span>
+          )}
+          {task.distance_km ? <span className="text-xs text-gray-500">{task.distance_km.toFixed(1)} km</span> : null}
+        </div>
       </div>
 
       <div className="mt-3 space-y-2">
