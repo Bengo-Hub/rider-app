@@ -113,6 +113,8 @@ export interface RiderMeResponse {
     role: string;
   };
   status: string;
+  /** freelance riders go through KYC review; staff riders are HR-vetted employees and do not. */
+  employment?: "freelance" | "staff";
   rider?: FleetMember;
   vehicle?: {
     id: string;

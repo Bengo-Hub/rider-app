@@ -29,6 +29,8 @@ export default function ProfilePage() {
   const { user, setUser } = useAuthStore();
   const { data: profileData } = useRiderProfile(orgSlug);
   const riderData = profileData?.rider;
+  // Staff riders were vetted by HR: no KYC documents and no review.
+  const isStaff = profileData?.employment === "staff";
   const { data: earnings } = useMyEarnings();
   // This rider's own deliveries; tasks end in "delivered" ("completed" is never reached).
   const { data: completedData } = useDeliveries({ tenantSlug: orgSlug, status: "delivered", mine: true, limit: 1 });
@@ -56,7 +58,7 @@ export default function ProfilePage() {
       return;
     }
 
-    if (!idPassportAttachment || !riderPhoto || !imageLicensePlate || !imageSideView) {
+    if (!isStaff && (!idPassportAttachment || !riderPhoto || !imageLicensePlate || !imageSideView)) {
       toast.error("Please upload all required KYC documents");
       return;
     }
@@ -79,7 +81,7 @@ export default function ProfilePage() {
         setUser(result.user);
       }
 
-      toast.success("Profile updated successfully. Your application is now under review.");
+      toast.success(isStaff ? "Profile updated." : "Profile updated successfully. Your application is now under review.");
       router.push(orgRoute(orgSlug, "/"));
     } catch {
       toast.error("Failed to update profile. Please try again.");
@@ -218,6 +220,7 @@ export default function ProfilePage() {
               />
             </div>
 
+            {!isStaff && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ImageUpload
                 label="ID / Passport Copy"
@@ -232,6 +235,7 @@ export default function ProfilePage() {
                 required
               />
             </div>
+            )}
           </section>
 
           {/* Vehicle Info */}
@@ -290,6 +294,7 @@ export default function ProfilePage() {
               />
             </div>
 
+            {!isStaff && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ImageUpload
                 label="Vehicle (License Plate)"
@@ -304,6 +309,7 @@ export default function ProfilePage() {
                 required
               />
             </div>
+            )}
           </section>
 
           {/* Submit */}
@@ -325,7 +331,7 @@ export default function ProfilePage() {
             )}
           </button>
 
-          {user?.status === "pending" && (
+          {!isStaff && user?.status === "pending" && (
             <p className="text-center text-xs text-gray-500">
               Your account is pending review. Complete your profile to speed up approval.
             </p>
