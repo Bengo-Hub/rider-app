@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Navigation, RotateCw } from "lucide-react";
+import { ZoneLayer, type ZoneShape } from "@bengo-hub/maps";
 
 interface DeliveryMapProps {
   /** Rider's current GPS position */
@@ -26,6 +27,8 @@ interface DeliveryMapProps {
   distanceKm: number | null;
   /** Route coordinates [lng, lat][] from routing API */
   routeCoordinates?: [number, number][];
+  /** Delivery area of the drop-off, drawn as an outline (logistics zone). */
+  dropoffZone?: ZoneShape | null;
   /** CSS class */
   className?: string;
 }
@@ -63,6 +66,7 @@ export function DeliveryMap({
   etaMinutes,
   distanceKm,
   routeCoordinates,
+  dropoffZone,
   className = "h-48 w-full rounded-xl overflow-hidden",
 }: DeliveryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -222,6 +226,9 @@ export function DeliveryMap({
   return (
     <div className="relative">
       <div ref={containerRef} className={className} />
+      {mapReady && mapRef.current && dropoffZone && (
+        <ZoneLayer map={mapRef.current} zones={[dropoffZone]} id="dropoff-zone" />
+      )}
 
       {/* ETA/Distance overlay */}
       {(etaMinutes !== null || distanceKm !== null) && (

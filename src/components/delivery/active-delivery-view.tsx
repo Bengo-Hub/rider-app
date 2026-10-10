@@ -8,6 +8,7 @@ import { StatusBadge } from "./status-badge";
 import { MapPin, Phone, Navigation, Package, ChevronRight, Camera, CheckCircle, X, WifiOff } from "lucide-react";
 import { googleMapsEmbedAvailable } from "@/components/map/google-map-embed";
 import { api } from "@/lib/api";
+import { useDropoffZone } from "@/hooks/useDropoffZone";
 import { toast } from "sonner";
 
 const DeliveryMap = dynamic(
@@ -90,6 +91,7 @@ export function ActiveDeliveryView({
   routeIsFromCache,
 }: ActiveDeliveryViewProps) {
   const nextStatus = NEXT_STATUS[task.status];
+  const dropoffZone = useDropoffZone(task.zone_id);
   const currentStepIdx = STEP_ORDER.indexOf(task.status);
   const [showProofForm, setShowProofForm] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -234,6 +236,7 @@ export function ActiveDeliveryView({
           etaMinutes={routeDurationMinutes ?? task.eta_minutes}
           distanceKm={routeDistanceKm ?? task.distance_km}
           routeCoordinates={routeCoordinates}
+          dropoffZone={dropoffZone}
         />
       )}
 
@@ -339,7 +342,13 @@ export function ActiveDeliveryView({
           </div>
           <div className="text-right">
             {task.distance_km ? <p className="font-medium">{task.distance_km.toFixed(1)} km</p> : null}
-            {task.delivery_fee ? <p className="text-xs text-gray-500">Delivery fee KES {Math.round(task.delivery_fee).toLocaleString()}</p> : null}
+            {/* A paid delivery's fee is the rider's earning; a free delivery is priced by
+                distance when the job is completed. */}
+            <p className="text-xs text-gray-500">
+              {task.delivery_fee
+                ? `You earn KES ${Math.round(task.delivery_fee).toLocaleString()}`
+                : "Earning set by distance on completion"}
+            </p>
           </div>
         </div>
       )}
