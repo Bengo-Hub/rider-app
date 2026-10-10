@@ -86,3 +86,14 @@ Status updates → PUT /tasks/{id}/status → invalidates query cache
   and only its URL is sent with the proof. Inline base64 photos are no longer stored.
 - Riders cannot list the dispatch board (`GET /tasks` is dispatcher only); they use
   `riders/me/tasks` and `riders/me/open-tasks`.
+
+## Delivery areas (2026-10-10)
+
+- Jobs carry `zone_id`, `zone_name`, `distance_km` and `delivery_fee` from logistics (the
+  checkout quote or intake tagging). Job cards show the area and distance; the active delivery
+  shows the area, the distance and the rider's earning (the delivery fee on paid deliveries;
+  free deliveries are priced by distance on completion).
+- The delivery map outlines the drop-off area with `ZoneLayer` from `@bengo-hub/maps` v0.3.0,
+  using the tenant's public `zones/coverage`.
+- Areas a rider covers are set by dispatchers on the logistics-ui shift form; auto-dispatch
+  offers jobs in those areas to the rider first.
