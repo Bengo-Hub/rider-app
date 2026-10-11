@@ -17,6 +17,8 @@ export type TaskPriority = "low" | "normal" | "high" | "urgent";
 
 export interface Task {
   id: string;
+  /** The customer has a delivery code the rider must enter (the code itself is never sent). */
+  pod_code_required?: boolean;
   tenant_id: string;
   tenant_slug: string;
   external_reference: string;

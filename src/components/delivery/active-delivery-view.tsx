@@ -108,6 +108,12 @@ export function ActiveDeliveryView({
     // used to show the amount but send nothing, and the delivery was rejected).
     ...(codAmount > 0 ? { amount_collected: codAmount, collection_method: "cash" as const } : {}),
   });
+  // Online orders carry a customer code; till and transfer deliveries do not, and the
+  // recipient's name is the proof instead. Missing flag (older API) means a code is needed.
+  const codeRequired = task.pod_code_required !== false;
+  const proofReady = codeRequired
+    ? (proofData.confirmation_code ?? "").length === 6
+    : (proofData.recipient_name ?? "").trim().length > 0;
   const codReady =
     !isCOD ||
     ((proofData.amount_collected ?? 0) >= codAmount &&
@@ -408,7 +414,9 @@ export function ActiveDeliveryView({
               </button>
             </div>
 
-            {/* Delivery Confirmation Code (required) */}
+            {/* Delivery confirmation code: only when the customer was given one (online
+                orders). Till deliveries have none; the recipient's name is the proof then. */}
+            {codeRequired && (
             <div>
               <label className="block text-xs font-semibold uppercase text-gray-500 mb-1">
                 Delivery Confirmation Code <span className="text-red-500">*</span>
@@ -433,6 +441,7 @@ export function ActiveDeliveryView({
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base tracking-[0.5em] focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
               />
             </div>
+            )}
 
             {/* Recipient Name */}
             <div>
@@ -564,9 +573,11 @@ export function ActiveDeliveryView({
             </div>
 
             {/* Submit */}
-            {(proofData.confirmation_code ?? "").length !== 6 && (
+            {!proofReady && (
               <p className="text-xs font-medium text-gray-500">
-                Enter the customer&apos;s 6-digit confirmation code to complete the delivery.
+                {codeRequired
+                  ? "Enter the customer's 6-digit confirmation code to complete the delivery."
+                  : "Enter the name of the person who received the order to complete the delivery."}
               </p>
             )}
             <button
@@ -595,7 +606,7 @@ export function ActiveDeliveryView({
                 submittingProof ||
                 advancing ||
                 photoUploading ||
-                (proofData.confirmation_code ?? "").length !== 6 ||
+                !proofReady ||
                 !codReady
               }
               className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3.5 text-base font-semibold text-white active:bg-green-700 disabled:opacity-50"
