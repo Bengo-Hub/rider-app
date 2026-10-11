@@ -8,8 +8,9 @@ import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 
 // ─── Environment (loaded from .env.test) ────────────────────────────
 const ORG_SLUG = process.env.E2E_ORG_SLUG || 'urban-loft';
-// Rider account — loaded from .env.test (no hardcoded passwords)
-const EMAIL = process.env.E2E_LOGIN_EMAIL || 'titusowuor30@gmail.com';
+// Rider account from .env.test only (an active rider of E2E_ORG_SLUG). The former demo
+// rider was removed from Urban Loft on 2026-10-10, so there is no default.
+const EMAIL = process.env.E2E_LOGIN_EMAIL ?? '';
 const PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? '';
 
 // =====================================================================
@@ -43,8 +44,8 @@ test.describe.serial('Rider delivery workflow', () => {
 
   // ─── Step 1: SSO Login ────────────────────────────────────────────
   test('1. SSO login as rider', async () => {
-    if (!PASSWORD) {
-      test.skip(true, 'E2E_LOGIN_PASSWORD not set in .env.test');
+    if (!PASSWORD || !EMAIL) {
+      test.skip(true, 'E2E_LOGIN_EMAIL and E2E_LOGIN_PASSWORD must be set in .env.test');
       return;
     }
 
