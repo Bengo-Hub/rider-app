@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Task, TaskListResponse, ACTIVE_STATUSES } from "@/types/logistics";
+import { ACTIVE_STATUSES, type Task, type TaskListResponse } from "@/types/logistics";
 
 interface UseActiveDeliveryOptions {
   tenantSlug: string;
@@ -27,10 +27,8 @@ export function useActiveDelivery({
       const res = await api.get<TaskListResponse>(
         `/${tenantSlug}/riders/me/tasks?limit=20`,
       );
-      // Find the first non-completed, non-cancelled, non-failed, non-pending task
-      const active = res.data?.find((t) =>
-        ["assigned", "accepted", "en_route_pickup", "arrived_pickup", "picked_up", "en_route_dropoff", "arrived_dropoff"].includes(t.status),
-      );
+      // The first job the rider is working on (one list of active statuses for the app).
+      const active = res.data?.find((t) => ACTIVE_STATUSES.includes(t.status));
       return active ?? null;
     },
     enabled: !!tenantSlug && !!riderId,

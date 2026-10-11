@@ -152,6 +152,8 @@ export interface ProofOfDelivery {
   completed_at: string;
 }
 
+/** Statuses of a job the rider is working on. en_route is the older single "on the way"
+ * state some tasks still use; the rider completes it with proof of delivery. */
 export const ACTIVE_STATUSES: TaskStatus[] = [
   "assigned",
   "accepted",
@@ -159,6 +161,7 @@ export const ACTIVE_STATUSES: TaskStatus[] = [
   "arrived_pickup",
   "picked_up",
   "en_route_dropoff",
+  "en_route",
   "arrived_dropoff",
 ];
 

@@ -92,7 +92,8 @@ export function ActiveDeliveryView({
 }: ActiveDeliveryViewProps) {
   const nextStatus = NEXT_STATUS[task.status];
   const dropoffZone = useDropoffZone(task.zone_id);
-  const currentStepIdx = STEP_ORDER.indexOf(task.status);
+  // The older "en_route" status sits at the driving-to-destination step.
+  const currentStepIdx = STEP_ORDER.indexOf(task.status === "en_route" ? "en_route_dropoff" : task.status);
   const [showProofForm, setShowProofForm] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [releaseReason, setReleaseReason] = useState("");
