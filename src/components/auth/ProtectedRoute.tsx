@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useRiderProfile } from "@/hooks/useRiderProfile";
 import { AccessModal } from "./AccessModal";
 import { PendingReviewBanner } from "./PendingReviewBanner";
 
@@ -17,6 +18,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, redirectToSSO } = useAuthStore();
   const pathname = usePathname();
   const orgSlug = useOrgSlug();
+  const membership = useRiderProfile(isAuthenticated ? orgSlug : "");
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,29 +45,30 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <>{children}</>;
   }
 
-  // Gating Logic
-  const hasRiderRole = user?.roles?.includes("rider");
-  const isApproved = user?.status === "active" || user?.status === "approved" || user?.status === "onboarding";
-  const isPendingReview = user?.status === "pending_review";
+  // Access follows the rider's fleet membership in logistics (/riders/me), not the SSO
+  // profile: SSO status is the account's, and riders may sign in with a rider, driver or
+  // courier role. Staff riders are created active (no KYC).
   const isPlatformAdmin = user?.roles?.includes("admin") || user?.roles?.includes("superuser");
-
-  // Platform admins get a pass
   if (isPlatformAdmin) return <>{children}</>;
 
-  // Non-riders see the registration modal
-  if (!hasRiderRole) {
+  if (membership.isLoading) {
     return (
-      <div className="relative min-h-screen">
-        <div className="blur-sm pointer-events-none select-none">
-          {children}
-        </div>
-        <AccessModal status="none" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
-  // Riders who submitted KYC (pending_review) see a non-blocking banner
-  if (isPendingReview) {
+  const status = membership.data?.status ?? "none";
+  const blocked = (modal: "none" | "pending" | "rejected") => (
+    <div className="relative min-h-screen">
+      <div className="blur-sm pointer-events-none select-none">{children}</div>
+      <AccessModal status={modal} />
+    </div>
+  );
+
+  if (status === "active" || status === "approved" || status === "onboarding") return <>{children}</>;
+  if (status === "pending_review") {
     return (
       <>
         <PendingReviewBanner />
@@ -73,18 +76,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       </>
     );
   }
-
-  // Riders who haven't submitted KYC yet (pending) see the blocking modal
-  if (!isApproved) {
-    return (
-      <div className="relative min-h-screen">
-        <div className="blur-sm pointer-events-none select-none">
-          {children}
-        </div>
-        <AccessModal status="pending" />
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  if (status === "rejected" || status === "suspended") return blocked("rejected");
+  if (status === "pending") return blocked("pending");
+  return blocked("none");
 }
