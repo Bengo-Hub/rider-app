@@ -6,13 +6,21 @@ import { useOrgSlug } from "@/providers/org-slug-provider";
 import { orgRoute } from "@/lib/routes";
 import { useMyEarnings, useMyStatements, useMyBillingEvents } from "@/hooks/useEarnings";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { PerDiemPanel } from "@/components/earnings/per-diem-panel";
+import { useRiderProfile } from "@/hooks/useRiderProfile";
 import { ArrowLeft, FileText, Clock, AlertCircle } from "lucide-react";
 
-type Tab = "overview" | "statements" | "history";
+type Tab = "overview" | "statements" | "history" | "per_diem";
 
 const TABS: { label: string; value: Tab }[] = [
   { label: "Overview", value: "overview" },
   { label: "Statements", value: "statements" },
+  { label: "History", value: "history" },
+];
+
+// Staff riders are on payroll: their screen is per diem for trips, then the usual history.
+const STAFF_TABS: { label: string; value: Tab }[] = [
+  { label: "Per diem", value: "per_diem" },
   { label: "History", value: "history" },
 ];
 
@@ -52,7 +60,12 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 
 export default function EarningsPage() {
   const orgSlug = useOrgSlug();
-  const [tab, setTab] = useState<Tab>("overview");
+  const { data: profile } = useRiderProfile(orgSlug);
+  const isStaff = profile?.employment === "staff";
+  const tabs = isStaff ? STAFF_TABS : TABS;
+  const [picked, setPicked] = useState<Tab | null>(null);
+  const tab: Tab = picked && tabs.some((t) => t.value === picked) ? picked : tabs[0].value;
+  const setTab = setPicked;
 
   const {
     data: summary,
@@ -83,13 +96,13 @@ export default function EarningsPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-bold">Earnings</h1>
+          <h1 className="text-lg font-bold">{isStaff ? "Trips and per diem" : "Earnings"}</h1>
         </div>
       </header>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b bg-white px-4 py-2">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
@@ -105,6 +118,7 @@ export default function EarningsPage() {
       </div>
 
       <main className="flex-1 space-y-4 p-4">
+        {tab === "per_diem" && <PerDiemPanel tenantSlug={orgSlug} />}
         {tab === "overview" && (
           <>
             {/* Summary card */}

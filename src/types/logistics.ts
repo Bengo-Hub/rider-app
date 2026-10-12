@@ -22,6 +22,8 @@ export interface Task {
   tenant_id: string;
   tenant_slug: string;
   external_reference: string;
+  /** Public tracking code of the delivery. */
+  tracking_code?: string;
   external_type: string;
   status: TaskStatus;
   priority: TaskPriority;
