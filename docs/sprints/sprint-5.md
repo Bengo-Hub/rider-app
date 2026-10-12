@@ -25,5 +25,6 @@
 - [x] Jobs in the older `en_route` status stay on the active screen; one `ACTIVE_STATUSES` list (`ff4b7eb`).
 - [x] Staff riders (HR-vetted employees) skip the KYC uploads (`06ecc2e`).
 - [x] e2e rider account from `.env.test` only (`b4945ba`).
+- [x] Staff riders: Earnings opens on Per diem (completed trips with the HR claim state, claim or re-claim with days).
 
-Open: online/offline toggle backed by shifts with continuous location; notifications list with live updates and notices for cancelled or reassigned jobs; payout method screen; job history detail; `returned` status; per diem claim screen for staff riders.
+Open: online/offline toggle backed by shifts with continuous location; notifications list with live updates and notices for cancelled or reassigned jobs; payout method screen; job history detail; `returned` status.
