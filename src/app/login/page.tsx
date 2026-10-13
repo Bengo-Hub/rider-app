@@ -20,6 +20,9 @@ export default function LoginPage() {
   );
 }
 
+// Top-level app routes that are not tenant slugs.
+const NON_TENANT_ROUTES = new Set(["login", "join", "auth", "api", "healthz"]);
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +51,11 @@ function LoginContent() {
   }
 
   const handleSignIn = async () => {
-    await redirectToSSO(returnTo);
+    // return_to is a tenant path ("/urban-loft/deliveries"); pass the tenant so SSO signs the
+    // rider in (or up) under that organisation instead of their own primary one.
+    const first = returnTo.startsWith("/") ? returnTo.split(/[/?#]/).filter(Boolean)[0] : undefined;
+    const tenant = first && !NON_TENANT_ROUTES.has(first) ? first : undefined;
+    await redirectToSSO(returnTo, tenant);
   };
 
   return (
