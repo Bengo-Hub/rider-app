@@ -36,4 +36,4 @@
 - [x] Job history detail (`/deliveries/{id}`): stops, area, distance, timeline, pay or per diem, cancel or failure reason. "My jobs" used to open the active screen even for finished jobs.
 - [x] `returned` status label and badge. Header bell opens notification settings (it showed a permanent unread dot), and the Settings menu item works.
 
-Open: an in-app notification inbox (logistics notifications are dispatcher alerts with no recipient; a rider inbox needs a recipient column, see the plan).
+- [x] Inbox (2026-10-13): the bell opens `/notifications` (jobs assigned, moved, cancelled, payouts) with an unread count; messages arrive live over `/riders/me/notifications/stream` and show as a toast on any screen. The client-side "job taken from you" check was removed: logistics now creates those messages on every path.

@@ -59,9 +59,6 @@ export function useClaimTask(tenantSlug: string) {
   });
 }
 
-/** Jobs the rider handed back themselves in this session. */
-export const releasedByRider = new Set<string>();
-
 /**
  * Hand a job back before collecting the order (bike trouble, too far, shift over). The job goes
  * back to the open pool and to the next rider. Riders never cancel the customer's delivery.
@@ -72,8 +69,6 @@ export function useDeclineTask(tenantSlug: string) {
   return useMutation({
     mutationFn: ({ taskId, reason }: { taskId: string; reason: string }) =>
       api.post<Task>(`/${tenantSlug}/riders/me/tasks/${taskId}/decline`, { reason }),
-    // The rider let this job go, so the "job taken from you" notice must stay quiet.
-    onSuccess: (_d, { taskId }) => releasedByRider.add(taskId),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["open-jobs"] });
       qc.invalidateQueries({ queryKey: ["deliveries"] });

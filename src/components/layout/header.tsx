@@ -8,11 +8,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { OnlineToggle } from "@/components/layout/online-toggle";
+import { useInbox } from "@/hooks/useInbox";
 import { Bell, LogOut, Settings, User } from "lucide-react";
 
 export function Header() {
   const user = useAuthStore((s) => s.user);
   const orgSlug = useOrgSlug();
+  const unread = useInbox(orgSlug).data?.unread ?? 0;
   const logout = useAuthStore((s) => s.logout);
   const { data: brandConfig } = useBrandConfig();
   const [showMenu, setShowMenu] = useState(false);
@@ -53,11 +55,16 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <Link
-            href={`/${orgSlug}/settings/notifications`}
-            aria-label="Notification settings"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/50 p-2 text-foreground transition-all hover:bg-secondary active:scale-95"
+            href={`/${orgSlug}/notifications`}
+            aria-label={unread > 0 ? `${unread} unread notifications` : "Notifications"}
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/50 p-2 text-foreground transition-all hover:bg-secondary active:scale-95"
           >
             <Bell className="h-5 w-5 opacity-70" />
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </Link>
           <ThemeToggle />
           <OnlineToggle />

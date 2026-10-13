@@ -1,4 +1,4 @@
-const API_BASE =
+export const API_BASE =
   process.env.NEXT_PUBLIC_LOGISTICS_API_URL ?? "http://localhost:4020/api/v1";
 
 let on401Callback: (() => void) | null = null;
