@@ -5,10 +5,14 @@ import { useAuthStore } from "@/store/auth-store";
 import { useBrandConfig } from "@/hooks/useBrandConfig";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import Image from "next/image";
+import Link from "next/link";
+import { useOrgSlug } from "@/providers/org-slug-provider";
+import { OnlineToggle } from "@/components/layout/online-toggle";
 import { Bell, LogOut, Settings, User } from "lucide-react";
 
 export function Header() {
   const user = useAuthStore((s) => s.user);
+  const orgSlug = useOrgSlug();
   const logout = useAuthStore((s) => s.logout);
   const { data: brandConfig } = useBrandConfig();
   const [showMenu, setShowMenu] = useState(false);
@@ -48,17 +52,15 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/50 p-2 text-foreground transition-all hover:bg-secondary active:scale-95">
+          <Link
+            href={`/${orgSlug}/settings/notifications`}
+            aria-label="Notification settings"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/50 p-2 text-foreground transition-all hover:bg-secondary active:scale-95"
+          >
             <Bell className="h-5 w-5 opacity-70" />
-            <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full border-2 border-card" />
-          </button>
+          </Link>
           <ThemeToggle />
-          <div className="ml-2 flex items-center gap-2 rounded-full bg-green-500/10 px-2 py-1 border border-green-500/20">
-            <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-black text-green-600 uppercase tracking-tighter">
-              Online
-            </span>
-          </div>
+          <OnlineToggle />
 
           {/* Profile dropdown */}
           <div className="relative ml-1" ref={menuRef}>
@@ -76,13 +78,14 @@ export function Header() {
                   <p className="text-[10px] text-muted-foreground truncate">{user?.email ?? ""}</p>
                 </div>
                 <div className="py-1">
-                  <button
-                    onClick={() => { setShowMenu(false); }}
+                  <Link
+                    href={`/${orgSlug}/settings`}
+                    onClick={() => setShowMenu(false)}
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary/50 transition-colors"
                   >
                     <Settings className="h-4 w-4 opacity-60" />
                     Settings
-                  </button>
+                  </Link>
                   <button
                     onClick={() => {
                       setShowMenu(false);

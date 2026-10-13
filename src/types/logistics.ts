@@ -11,7 +11,8 @@ export type TaskStatus =
   | "delivered"
   | "completed"
   | "cancelled"
-  | "failed";
+  | "failed"
+  | "returned";
 
 export type TaskPriority = "low" | "normal" | "high" | "urgent";
 
@@ -181,6 +182,7 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   completed: "Completed",
   cancelled: "Cancelled",
   failed: "Failed",
+  returned: "Returned",
 };
 
 export const NEXT_STATUS: Partial<Record<TaskStatus, TaskStatus>> = {

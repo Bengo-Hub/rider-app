@@ -24,9 +24,11 @@ export default function ActiveDeliveryPage() {
     riderId: user?.id,
   });
 
+  // Position for the map only; LocationBeacon (layout) sends fixes while on a job.
   const gps = useLocationTracking({
     tenantSlug: orgSlug,
     enabled: !!activeTask,
+    send: false,
   });
 
   const isPickupPhase = activeTask

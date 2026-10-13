@@ -7,15 +7,17 @@ import { orgRoute } from "@/lib/routes";
 import { useMyEarnings, useMyStatements, useMyBillingEvents } from "@/hooks/useEarnings";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { PerDiemPanel } from "@/components/earnings/per-diem-panel";
+import { PayoutMethodCard } from "@/components/earnings/payout-method-card";
 import { useRiderProfile } from "@/hooks/useRiderProfile";
 import { ArrowLeft, FileText, Clock, AlertCircle } from "lucide-react";
 
-type Tab = "overview" | "statements" | "history" | "per_diem";
+type Tab = "overview" | "statements" | "history" | "per_diem" | "payout";
 
 const TABS: { label: string; value: Tab }[] = [
   { label: "Overview", value: "overview" },
   { label: "Statements", value: "statements" },
   { label: "History", value: "history" },
+  { label: "Get paid", value: "payout" },
 ];
 
 // Staff riders are on payroll: their screen is per diem for trips, then the usual history.
@@ -119,6 +121,7 @@ export default function EarningsPage() {
 
       <main className="flex-1 space-y-4 p-4">
         {tab === "per_diem" && <PerDiemPanel tenantSlug={orgSlug} />}
+        {tab === "payout" && <PayoutMethodCard />}
         {tab === "overview" && (
           <>
             {/* Summary card */}

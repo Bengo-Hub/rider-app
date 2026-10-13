@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
   failed: "bg-red-200 text-red-800",
+  returned: "bg-red-100 text-red-700",
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {

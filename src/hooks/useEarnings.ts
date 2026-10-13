@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrgSlug } from "@/providers/org-slug-provider";
 import { api } from "@/lib/api";
 
@@ -91,5 +91,41 @@ export function useMyCash() {
     queryFn: () => api.get<RiderCash>(`/${orgSlug}/riders/me/cash`),
     enabled: !!orgSlug,
     refetchInterval: 60_000,
+  });
+}
+
+/** Where the rider is paid (logistics payoutMethodResponse; account numbers come back masked). */
+export interface PayoutMethod {
+  payout_method: "mpesa_b2c" | "paystack_bank" | "paystack_mobile" | "cash" | "internal_wallet";
+  payout_phone?: string;
+  payout_bank_code?: string;
+  payout_account_number?: string;
+  payout_account_name?: string;
+  payout_status: "active" | "suspended";
+}
+
+export interface SavePayoutMethod {
+  payout_method: PayoutMethod["payout_method"];
+  payout_phone?: string;
+  payout_bank_code?: string;
+  account_number?: string;
+  account_name?: string;
+}
+
+export function useMyPayoutMethod() {
+  const orgSlug = useOrgSlug();
+  return useQuery<PayoutMethod>({
+    queryKey: ["my-payout-method", orgSlug],
+    queryFn: () => api.get<PayoutMethod>(`/${orgSlug}/riders/me/payout-method`),
+    enabled: !!orgSlug,
+  });
+}
+
+export function useSaveMyPayoutMethod() {
+  const orgSlug = useOrgSlug();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SavePayoutMethod) => api.put<PayoutMethod>(`/${orgSlug}/riders/me/payout-method`, body),
+    onSuccess: (data) => qc.setQueryData(["my-payout-method", orgSlug], data),
   });
 }

@@ -12,7 +12,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Package, RefreshCw } from "lucide-react";
-import type { Task } from "@/types/logistics";
+import { ACTIVE_STATUSES, type Task } from "@/types/logistics";
 
 // Riders only ever see their own jobs and the open jobs they may take. The old "All" and
 // "Available" tabs read the tenant-wide task list, which showed every other rider's jobs
@@ -170,7 +170,14 @@ export default function DeliveriesPage() {
                 accepting={acceptMutation.isPending}
                 onClaim={tab === "open" ? handleClaim : undefined}
                 claiming={claimMutation.isPending}
-                onView={tab === "mine" ? () => router.push(orgRoute(orgSlug, "/active")) : undefined}
+                onView={
+                  tab === "mine"
+                    ? () =>
+                        router.push(
+                          orgRoute(orgSlug, ACTIVE_STATUSES.includes(task.status) ? "/active" : `/deliveries/${task.id}`),
+                        )
+                    : undefined
+                }
               />
             ))}
 

@@ -4,6 +4,7 @@ import { OrgSlugProvider } from "@/providers/org-slug-provider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PWAUpdateBanner } from "@/components/pwa/pwa-update-banner";
 import { PushTokenSync } from "@/components/pwa/push-token-sync";
+import { LocationBeacon } from "@/components/layout/location-beacon";
 
 export async function generateMetadata({
   params,
@@ -31,6 +32,7 @@ export default async function OrgSlugLayout({
         <PWAUpdateBanner />
         <ProtectedRoute>
           <PushTokenSync />
+          <LocationBeacon />
           {children}
         </ProtectedRoute>
       </OrgSlugProvider>

@@ -7,6 +7,9 @@ interface LocationTrackingOptions {
   tenantSlug: string;
   enabled: boolean;
   intervalMs?: number;
+  /** Post fixes to logistics. The app-wide LocationBeacon sends; screens that only need the
+   * position for a map pass false so nothing is posted twice. */
+  send?: boolean;
 }
 
 interface LocationState {
@@ -21,6 +24,7 @@ export function useLocationTracking({
   tenantSlug,
   enabled,
   intervalMs = 15_000,
+  send = true,
 }: LocationTrackingOptions) {
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
@@ -43,6 +47,7 @@ export function useLocationTracking({
         accuracy: pos.coords.accuracy,
       });
 
+      if (!send) return;
       // Throttle API calls
       const now = Date.now();
       if (now - lastSentRef.current < intervalMs) return;
@@ -57,10 +62,10 @@ export function useLocationTracking({
           accuracy_m: pos.coords.accuracy,
         });
       } catch {
-        // Silently fail — location updates are best-effort
+        // Location updates are best-effort
       }
     },
-    [tenantSlug, intervalMs],
+    [tenantSlug, intervalMs, send],
   );
 
   useEffect(() => {
@@ -69,7 +74,7 @@ export function useLocationTracking({
     watchIdRef.current = navigator.geolocation.watchPosition(
       sendLocation,
       () => {
-        // Geolocation error — ignore silently
+        // Geolocation errors are ignored; the next fix retries
       },
       {
         enableHighAccuracy: true,

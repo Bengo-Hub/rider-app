@@ -27,4 +27,13 @@
 - [x] e2e rider account from `.env.test` only (`b4945ba`).
 - [x] Staff riders: Earnings opens on Per diem (completed trips with the HR claim state, claim or re-claim with days).
 
-Open: online/offline toggle backed by shifts with continuous location; notifications list with live updates and notices for cancelled or reassigned jobs; payout method screen; job history detail; `returned` status.
+## Uber/Bolt parity 2026-10-13
+
+- [x] Online/offline switch in the header (was a hard-coded "Online" badge) on logistics `/riders/me/shift`: online starts the rider's scheduled shift or an open-ended one; offline ends it and drops the rider from auto-dispatch at once.
+- [x] `LocationBeacon` sends the rider's position on every screen while online or on a job. Only the active-job screen used to send it, so an idle rider waiting for work was never fresh enough for auto-dispatch to offer them a job. The active screen now reads the position for its map without posting it twice.
+- [x] A job taken away (cancelled, or moved by a dispatcher) shows a notice in the app; a push is sent too (logistics `e4560a5`, notifications-api `01efa0b`). A rider who declined a job is not told about it.
+- [x] "Get paid" tab: M-Pesa number or bank account on `/riders/me/payout-method` (the API normalises and validates; nothing could set it before).
+- [x] Job history detail (`/deliveries/{id}`): stops, area, distance, timeline, pay or per diem, cancel or failure reason. "My jobs" used to open the active screen even for finished jobs.
+- [x] `returned` status label and badge. Header bell opens notification settings (it showed a permanent unread dot), and the Settings menu item works.
+
+Open: an in-app notification inbox (logistics notifications are dispatcher alerts with no recipient; a rider inbox needs a recipient column, see the plan).
