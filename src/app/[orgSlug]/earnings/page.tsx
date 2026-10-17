@@ -63,7 +63,9 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 export default function EarningsPage() {
   const orgSlug = useOrgSlug();
   const { data: profile } = useRiderProfile(orgSlug);
-  const isStaff = profile?.employment === "staff";
+  // Only payroll riders swap earnings for trips and per diem; an internal rider paid by the
+  // earning rules sees earnings like a freelance rider.
+  const isStaff = profile?.employment === "staff" && profile?.pay_basis !== "earning_rules";
   const tabs = isStaff ? STAFF_TABS : TABS;
   const [picked, setPicked] = useState<Tab | null>(null);
   const tab: Tab = picked && tabs.some((t) => t.value === picked) ? picked : tabs[0].value;

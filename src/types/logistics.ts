@@ -120,6 +120,8 @@ export interface RiderMeResponse {
   status: string;
   /** freelance riders go through KYC review; staff riders are HR-vetted employees and do not. */
   employment?: "freelance" | "staff";
+  /** payroll riders earn no per-delivery pay (trips and per diem screen); earning_rules riders do. */
+  pay_basis?: "payroll" | "earning_rules";
   rider?: FleetMember;
   vehicle?: {
     id: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -17,7 +17,7 @@ import { useMyEarnings } from "@/hooks/useEarnings";
 import { useDeliveries } from "@/hooks/useDeliveries";
 
 const vehicleTypes = [
-  { value: "bike", label: "Motorbike", icon: Bike },
+  { value: "motorcycle", label: "Motorbike", icon: Bike },
   { value: "car", label: "Car", icon: Car },
   { value: "van", label: "Van", icon: Truck },
   { value: "truck", label: "Truck", icon: Truck },
@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const { data: completedData } = useDeliveries({ tenantSlug: orgSlug, status: "delivered", mine: true, limit: 1 });
 
   const [phone, setPhone] = useState(user?.phone ?? "");
-  const [vehicleType, setVehicleType] = useState("bike");
+  const [vehicleType, setVehicleType] = useState("motorcycle");
   const [licenseNo, setLicenseNo] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [idNumber, setIdNumber] = useState("");
@@ -45,6 +45,21 @@ export default function ProfilePage() {
   const [imageLicensePlate, setImageLicensePlate] = useState("");
   const [imageSideView, setImageSideView] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // A rider the business onboarded already has an ID number, licence and vehicle on file:
+  // show them instead of an empty form, once, when the profile first loads.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!profileData || prefilled.current) return;
+    prefilled.current = true;
+    const onFile = profileData.rider as { id_number?: string; id_passport_number?: string; license_no?: string } | undefined;
+    setIdNumber((v) => v || onFile?.id_number || onFile?.id_passport_number || "");
+    setLicenseNo((v) => v || onFile?.license_no || "");
+    if (profileData.vehicle) {
+      setVehicleType(profileData.vehicle.vehicle_type || "motorcycle");
+      setLicensePlate((v) => v || profileData.vehicle?.license_plate || "");
+    }
+  }, [profileData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +73,11 @@ export default function ProfilePage() {
       return;
     }
 
+    // Internal riders upload nothing, but their ID number must be on file.
+    if (isStaff && !idNumber.trim()) {
+      toast.error("Enter your national ID or passport number");
+      return;
+    }
     if (!isStaff && (!idPassportAttachment || !riderPhoto || !imageLicensePlate || !imageSideView)) {
       toast.error("Please upload all required KYC documents");
       return;
@@ -208,7 +228,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <label htmlFor="idNumber" className="block text-sm font-medium text-muted-foreground mb-1">
-                National ID / Passport Number
+                National ID / Passport Number{isStaff ? " *" : ""}
               </label>
               <input
                 id="idNumber"
