@@ -11,7 +11,8 @@ import { useActiveDelivery } from "@/hooks/useActiveDelivery";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeliveryCard } from "@/components/delivery/delivery-card";
 import { useRouter } from "next/navigation";
-import { Banknote, Package, Zap, DollarSign, Settings } from "lucide-react";
+import { Banknote, Package, Zap, DollarSign, Settings, ShieldAlert, ShieldOff } from "lucide-react";
+import { useRiderProfile } from "@/hooks/useRiderProfile";
 import { useMyCash, useMyEarnings } from "@/hooks/useEarnings";
 import { useBrandConfig } from "@/hooks/useBrandConfig";
 import Image from "next/image";
@@ -23,6 +24,7 @@ export default function RiderDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { data: brandConfig } = useBrandConfig();
+  const { data: profile } = useRiderProfile(orgSlug);
 
   const { data: myCash } = useMyCash();
   const { data: earnings } = useMyEarnings();
@@ -70,6 +72,33 @@ export default function RiderDashboard() {
       <Header />
 
       <main className="flex-1 space-y-6 p-4 sm:p-6">
+        {/* No jobs while the vehicle is inactive or its insurance is missing or expired. */}
+        {profile?.job_block_message && (
+          <Link
+            href={orgRoute(orgSlug, "/profile")}
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          >
+            <ShieldOff className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>
+              <span className="block font-semibold">You are not getting delivery jobs</span>
+              {profile.job_block === "vehicle_inactive"
+                ? "Your vehicle is inactive. Ask your manager to reactivate it."
+                : "Your vehicle's insurance needs updating. Tap to record the renewed policy."}
+            </span>
+          </Link>
+        )}
+        {profile?.vehicle_insurance?.status === "expiring" && !profile.job_block && (
+          <Link
+            href={orgRoute(orgSlug, "/profile")}
+            className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
+          >
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>
+              Your vehicle&apos;s insurance expires in {profile.vehicle_insurance.days_left ?? 0} day
+              {profile.vehicle_insurance.days_left === 1 ? "" : "s"}. Renew it and record the new policy.
+            </span>
+          </Link>
+        )}
         {/* Earnings Card - Premium Glassmorphism / Gradient */}
         <div className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-lg shadow-primary/20">
           <div className="relative z-10">

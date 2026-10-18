@@ -109,6 +109,20 @@ export interface FleetMember {
   };
 }
 
+/** A vehicle's insurance as logistics-api reports it. Dates are YYYY-MM-DD. */
+export interface VehicleInsurance {
+  policy_no?: string;
+  certificate_no?: string;
+  insurer?: string;
+  cover?: string;
+  starts_on?: string;
+  expires_on?: string;
+  document?: string;
+  status: "valid" | "expiring" | "expired" | "missing" | "not_required";
+  days_left?: number;
+  block?: string;
+}
+
 export interface RiderMeResponse {
   user: {
     id: string;
@@ -122,6 +136,11 @@ export interface RiderMeResponse {
   employment?: "freelance" | "staff";
   /** payroll riders earn no per-delivery pay (trips and per diem screen); earning_rules riders do. */
   pay_basis?: "payroll" | "earning_rules";
+  /** The linked vehicle's insurance under the business's policy. */
+  vehicle_insurance?: VehicleInsurance;
+  /** Set when the rider gets no jobs because of their vehicle (inactive, no or expired insurance). */
+  job_block?: "vehicle_inactive" | "no_insurance" | "insurance_expired";
+  job_block_message?: string;
   rider?: FleetMember;
   vehicle?: {
     id: string;

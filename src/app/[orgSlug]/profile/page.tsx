@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { useRiderProfile } from "@/hooks/useRiderProfile";
+import { VehicleInsuranceCard } from "@/components/profile/vehicle-insurance-card";
 import { useMyEarnings } from "@/hooks/useEarnings";
 import { useDeliveries } from "@/hooks/useDeliveries";
 
@@ -205,6 +206,18 @@ export default function ProfilePage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Insurance of the linked vehicle: status and renewal (outside the profile form). */}
+        {profileData?.vehicle && (
+          <div className="mb-5">
+            <VehicleInsuranceCard
+              orgSlug={orgSlug}
+              plate={profileData.vehicle.license_plate}
+              insurance={profileData.vehicle_insurance}
+              blockMessage={profileData.job_block_message}
+            />
           </div>
         )}
 
