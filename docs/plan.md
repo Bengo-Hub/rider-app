@@ -84,6 +84,12 @@ Status updates → PUT /tasks/{id}/status → invalidates query cache
   `failed`). The outlet is alerted and the rider brings the order back.
 - The proof-of-delivery photo is uploaded first (`/{tenant}/media/upload`, private, signed URL)
   and only its URL is sent with the proof. Inline base64 photos are no longer stored.
+- Completing a delivery needs the customer's 6-digit code (online orders) and the name of who
+  received it; logistics-api checks the code, so the app's check is only a convenience. Five wrong
+  codes lock the job for the dispatcher. When the customer cannot find the code the rider taps
+  "Customer can't find the code? Ask the dispatcher" (`POST /{tenant}/riders/me/tasks/{id}/confirmation-help`);
+  the dispatcher then confirms with the customer's code or marks it delivered from logistics-ui.
+  The rider app has no way to finish a coded delivery without the code.
 - Riders cannot list the dispatch board (`GET /tasks` is dispatcher only); they use
   `riders/me/tasks` and `riders/me/open-tasks`.
 

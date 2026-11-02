@@ -213,4 +213,6 @@ export const NEXT_STATUS: Partial<Record<TaskStatus, TaskStatus>> = {
   arrived_pickup: "picked_up",
   picked_up: "en_route_dropoff",
   en_route_dropoff: "arrived_dropoff",
+  // Legacy single-leg status: the rider still marks arrival before proof of delivery.
+  en_route: "arrived_dropoff",
 };

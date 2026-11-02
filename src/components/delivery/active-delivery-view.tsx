@@ -112,9 +112,27 @@ export function ActiveDeliveryView({
   // Online orders carry a customer code; till and transfer deliveries do not, and the
   // recipient's name is the proof instead. Missing flag (older API) means a code is needed.
   const codeRequired = task.pod_code_required !== false;
-  const proofReady = codeRequired
-    ? (proofData.confirmation_code ?? "").length === 6
-    : (proofData.recipient_name ?? "").trim().length > 0;
+  // The server checks the code and needs to know who took the order.
+  const proofReady =
+    (proofData.recipient_name ?? "").trim().length > 0 &&
+    (!codeRequired || (proofData.confirmation_code ?? "").length === 6);
+  const [helpSent, setHelpSent] = useState(false);
+  const [helpSending, setHelpSending] = useState(false);
+  /** The customer cannot find the code: the dispatcher confirms it with them or overrides. */
+  const askDispatcher = async () => {
+    setHelpSending(true);
+    try {
+      await api.post(`/riders/me/tasks/${task.id}/confirmation-help`, {
+        reason: "Customer cannot find the delivery code",
+      });
+      setHelpSent(true);
+      toast.success("The dispatcher has been asked to confirm this delivery. Wait here with the order.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not reach the dispatcher. Try again.");
+    } finally {
+      setHelpSending(false);
+    }
+  };
   const codReady =
     !isCOD ||
     ((proofData.amount_collected ?? 0) >= codAmount &&
@@ -441,13 +459,25 @@ export function ActiveDeliveryView({
                 maxLength={6}
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base tracking-[0.5em] focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
               />
+              <button
+                type="button"
+                onClick={askDispatcher}
+                disabled={helpSending || helpSent}
+                className="mt-2 text-sm font-medium text-orange-600 underline disabled:text-gray-400 disabled:no-underline"
+              >
+                {helpSent
+                  ? "Dispatcher asked to confirm this delivery"
+                  : helpSending
+                    ? "Asking the dispatcher..."
+                    : "Customer can't find the code? Ask the dispatcher"}
+              </button>
             </div>
             )}
 
             {/* Recipient Name */}
             <div>
               <label className="block text-xs font-semibold uppercase text-gray-500 mb-1">
-                Recipient Name
+                Recipient Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -576,7 +606,7 @@ export function ActiveDeliveryView({
             {/* Submit */}
             {!proofReady && (
               <p className="text-xs font-medium text-gray-500">
-                {codeRequired
+                {codeRequired && (proofData.confirmation_code ?? "").length !== 6
                   ? "Enter the customer's 6-digit confirmation code to complete the delivery."
                   : "Enter the name of the person who received the order to complete the delivery."}
               </p>
