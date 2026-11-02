@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Codevertex Rider",
+  title: "Rider App",
   description:
     "Manage deliveries, track routes and see your earnings",
   manifest: "/manifest.json",

@@ -2,9 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  serviceAppName,
   serviceBrandingEntry,
-  serviceShortName,
   type ServiceBrandingEntry,
 } from "@bengo-hub/shared-ui-lib/branding";
 import { brand as staticBrand } from "@/config/brand";
@@ -72,12 +70,11 @@ export function useBrandConfig() {
         const tenant = (await res.json()) as PublicTenant;
         const entry: ServiceBrandingEntry = serviceBrandingEntry(tenant.metadata, "rider") ?? {};
         const name = tenant.name || slug;
-        // Shared naming rule (shared-ui-lib branding): the tenant's own rider-app name wins, else
-        // "<brand word> Rider" ("The Urban Rider").
+        // The app is always "Rider App"; the tenant shows through its logo and colours.
         return {
           name,
-          appName: serviceAppName(name, "Rider", slug, entry),
-          shortName: serviceShortName(name, "Rider", slug, entry),
+          appName: "Rider App",
+          shortName: "Rider App",
           logoUrl: entry.icon_url || tenant.logo_url || staticBrand.assets.logo,
           supportEmail: tenant.contact_email || staticBrand.support.email,
           supportPhone: tenant.contact_phone || staticBrand.support.phone,

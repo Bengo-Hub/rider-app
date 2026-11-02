@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   serviceBrandingEntry,
-  serviceFullName,
-  serviceShortName,
   type ServiceBrandingEntry,
 } from '@bengo-hub/shared-ui-lib/branding';
 
@@ -69,11 +67,11 @@ export async function GET(
   const tenant = await fetchTenant(orgSlug);
   const entry: ServiceBrandingEntry = serviceBrandingEntry(tenant?.metadata, SERVICE_KEY) ?? {};
 
-  const businessName = tenant?.name ?? orgSlug;
   // Shared naming rule (shared-ui-lib branding): the tenant's own app name (e.g. "Loft Riders")
   // wins, else "<Business> Rider" with a "<brand word> Rider" home-screen label.
-  const name = serviceFullName(businessName, 'Rider', 'Bengo', entry);
-  const shortName = serviceShortName(businessName, 'Rider', 'Bengo', entry);
+  // The installed app is always "Rider App"; the tenant shows through its icon and colours.
+  const name = 'Rider App';
+  const shortName = 'Rider App';
   const primaryColor =
     entry.theme_color ?? tenant?.brand_colors?.primary ?? metaString(tenant?.metadata, 'primary_color') ?? DEFAULT_PRIMARY;
   const bgColor =
