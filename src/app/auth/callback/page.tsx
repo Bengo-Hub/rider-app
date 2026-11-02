@@ -32,12 +32,13 @@ function AuthCallbackContent() {
     if (status !== "authenticated" || !user) return;
 
     const timer = setTimeout(() => {
-      // Get the return URL saved before SSO redirect
-      const returnTo =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("sso_return_to") ?? "/"
-          : "/";
+      // Back to the page saved before the SSO hop, else the rider's own organisation. "/" is never
+      // a destination: it redirects to the deployment's default tenant, whose app refuses this
+      // rider's token and starts the sign-in over.
+      const home = user.tenants?.[0]?.slug ? `/${user.tenants[0].slug}` : null;
+      const saved = sessionStorage.getItem("sso_return_to");
       sessionStorage.removeItem("sso_return_to");
+      const returnTo = saved && saved !== "/" ? saved : home ?? "/";
 
       // If user has pending status (awaiting approval), redirect to pending page
       if (user.status === "pending" || user.status === "pending_review") {

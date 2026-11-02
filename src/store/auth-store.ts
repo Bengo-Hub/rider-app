@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -54,6 +55,7 @@ interface AuthState {
   redirectToSSO: (returnTo?: string, tenant?: string) => Promise<void>;
   handleSSOCallback: (code: string, callbackUrl: string) => Promise<void>;
   logout: () => void;
+  clearSession: () => void;
   hydrateFromWebAuthn: (tokens: { accessToken: string; refreshToken: string; expiresIn: number }) => Promise<void>;
 }
 
@@ -206,6 +208,24 @@ export const useAuthStore = create<AuthState>()(
       },
 
       /**
+       * clearSession drops this app's session without signing out of SSO, for a token that
+       * can no longer be renewed. The guard then sends the rider through SSO, which signs them
+       * straight back in while their SSO session lives. logout() is only for a rider who chose
+       * to sign out: it also ends the SSO session, and calling it on a failed check is what sent
+       * riders round the sign-in pages.
+       */
+      clearSession: () =>
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+          status: "idle",
+          lastAuthenticatedAt: null,
+        }),
+
+      /**
        * Logout - clear local state and redirect to SSO logout.
        */
       logout: () => {
@@ -243,3 +263,17 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+/**
+ * useAuthHydrated is true once the saved session has been read back from storage. During the
+ * first render of a server-rendered page zustand hands components the store's initial state (no
+ * token, no rider), so a guard that decides before this is true sends a signed-in rider to SSO
+ * on every page load.
+ */
+export function useAuthHydrated(): boolean {
+  return useSyncExternalStore(
+    (onChange) => useAuthStore.persist.onFinishHydration(onChange),
+    () => useAuthStore.persist.hasHydrated(),
+    () => false,
+  );
+}
