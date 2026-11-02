@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rider App - Urban Loft Delivery",
+  title: "Codevertex Rider",
   description:
-    "Manage deliveries, track routes, and earn with Urban Loft Cafe",
+    "Manage deliveries, track routes and see your earnings",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",

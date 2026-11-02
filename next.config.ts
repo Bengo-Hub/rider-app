@@ -50,6 +50,13 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // @ts-ignore - Required for Turbopack in Next.js 16 (per CLI instruction)
   turbopack: {},
+  // Tenant logos and icons come from auth (accounts/sso) or a tenant's media on the platform
+  // domain. Without these the image optimizer refuses them (400) and the header shows alt text.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.codevertexafrica.com" },
+    ],
+  },
 };
 
 export default withPWA(nextConfig);
