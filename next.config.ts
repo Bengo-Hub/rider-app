@@ -12,7 +12,7 @@ const withPWA = withPWAInit({
     runtimeCaching: [
       // Tile server: CacheFirst, 24h expiration
       {
-        urlPattern: /^https:\/\/tiles\.codevertexitsolutions\.com\/.*/i,
+        urlPattern: /^https:\/\/tiles\.codevertexafrica\.com\/.*/i,
         handler: "CacheFirst",
         options: {
           cacheName: "map-tiles",

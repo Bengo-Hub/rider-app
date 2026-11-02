@@ -15,9 +15,9 @@ test.describe('Rider App SSO login and landing', () => {
     const signInLink = page.getByRole('link', { name: /sign in|login|join/i }).first();
     await signInLink.click().catch(() => {});
     // SSO may redirect through /login or /auth before reaching accounts page.
-    // Real domain is codevertexafrica.com (devops-k8s apps/auth-ui/values.yaml) --
-    // codevertexitsolutions.com here previously never matched a real redirect, so this
-    // whole login branch silently no-op'd and the test failed later for the wrong reason.
+    // Real domain is codevertexafrica.com (devops-k8s apps/auth-ui/values.yaml); a wrong host
+    // here never matches, so the login branch silently no-ops and the test fails later for the
+    // wrong reason.
     const onAccounts = await page.waitForURL(/accounts\.codevertexafrica\.com/, { timeout: 25_000 }).then(() => true).catch(() => false);
     if (onAccounts) {
       // Wait for SSO form to be ready
