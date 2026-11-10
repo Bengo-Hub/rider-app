@@ -30,7 +30,7 @@ export function useAuth() {
         return await load(accessToken);
       } catch (err) {
         if ((err as { status?: number })?.status !== 401) throw err;
-        const renewed = await refreshAccessToken();
+        const renewed = await refreshAccessToken(accessToken);
         if (renewed) return load(renewed);
         clearSession();
         throw err;

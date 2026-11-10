@@ -62,7 +62,7 @@ async function request<T>(
       // Skip auto-logout for /auth/me — may 401 before JIT sync completes
       if (!path.includes("/auth/me")) {
         const { refreshAccessToken } = await import("@/lib/token-refresh");
-        const newToken = await refreshAccessToken();
+        const newToken = await refreshAccessToken(token);
 
         if (newToken) {
           // Retry with refreshed token

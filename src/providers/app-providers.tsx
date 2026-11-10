@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import { setOn401 } from "@/lib/api";
+import { AUTH_STORAGE_KEY } from "@/lib/token-refresh";
 import { useAuthStore } from "@/store/auth-store";
+import { watchSessionAcrossTabs } from "@bengo-hub/shared-ui-lib/auth";
 import { PWAInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { OfflineBar } from "@bengo-hub/shared-ui-lib/offline";
 
@@ -23,6 +25,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
       }),
   );
   const logout = useAuthStore((s) => s.logout);
+
+  // Another tab renewed or replaced the session: load it here so this tab neither holds a
+  // rotated-away token nor writes its stale copy back. api.ts reads the token from storage.
+  useEffect(
+    () => watchSessionAcrossTabs(AUTH_STORAGE_KEY, () => void useAuthStore.persist.rehydrate()),
+    [],
+  );
 
   // Register 401 handler: clear all caches and redirect to SSO.
   // Skip during syncing/loading to avoid clearing session during JIT sync.

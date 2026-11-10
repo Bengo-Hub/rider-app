@@ -42,6 +42,8 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  /** Access-token expiry in epoch milliseconds; null for a session saved before it was kept. */
+  expiresAt: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   status: AuthStatus;
@@ -65,6 +67,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
+      expiresAt: null,
       isAuthenticated: false,
       isLoading: true,
       status: "idle" as AuthStatus,
@@ -131,7 +134,11 @@ export const useAuthStore = create<AuthState>()(
           });
 
           const accessToken = tokenResponse.access_token;
-          set({ accessToken, refreshToken: tokenResponse.refresh_token ?? null });
+          set({
+            accessToken,
+            refreshToken: tokenResponse.refresh_token ?? null,
+            expiresAt: Date.now() + (tokenResponse.expires_in || 3600) * 1000,
+          });
 
           // Step 3: Poll logistics-api for rider sync (via NATS events)
           set({ status: "syncing" });
@@ -195,6 +202,7 @@ export const useAuthStore = create<AuthState>()(
             user,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken ?? null,
+            expiresAt: Date.now() + (tokens.expiresIn || 3600) * 1000,
             isAuthenticated: true,
             isLoading: false,
             status: 'authenticated',
@@ -219,6 +227,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           accessToken: null,
           refreshToken: null,
+          expiresAt: null,
           isAuthenticated: false,
           isLoading: false,
           status: "idle",
@@ -237,6 +246,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           accessToken: null,
           refreshToken: null,
+          expiresAt: null,
           isAuthenticated: false,
           isLoading: false,
           status: "idle",
@@ -258,6 +268,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
+        expiresAt: state.expiresAt,
         isAuthenticated: state.isAuthenticated,
       }),
     },
