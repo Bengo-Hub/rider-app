@@ -8,20 +8,50 @@ export function setOn401(callback: (() => void) | null) {
   on401Callback = callback;
 }
 
+/**
+ * The tenant the access token was issued for (tenant_id / tenant_slug claims). The API pins a
+ * rider to this tenant, so it beats whatever an earlier session left in localStorage. Only
+ * reads the payload; the API verifies the signature.
+ */
+export function tokenTenant(token: string | null | undefined): { id: string | null; slug: string | null } {
+  const none = { id: null, slug: null };
+  const part = token?.split(".")[1];
+  if (!part) return none;
+  try {
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)));
+    return {
+      id: typeof claims?.tenant_id === "string" && claims.tenant_id ? claims.tenant_id : null,
+      slug: typeof claims?.tenant_slug === "string" && claims.tenant_slug ? claims.tenant_slug : null,
+    };
+  } catch {
+    return none;
+  }
+}
+
+/** True when the API refused the request because the tenant sent is not the signed-in one. */
+async function isTenantMismatch(res: Response): Promise<boolean> {
+  if (res.status !== 403) return false;
+  const text = await res.clone().text().catch(() => "");
+  return /tenant does not match/i.test(text);
+}
+
 async function request<T>(
   path: string,
   options?: RequestInit,
+  tenantRetried = false,
 ): Promise<T> {
-  const tenantSlug =
-    typeof window !== "undefined" ? localStorage.getItem("tenantSlug") : null;
-  const tenantId =
-    typeof window !== "undefined" ? localStorage.getItem("tenantId") : null;
-
   const token =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("rider-auth-storage") ?? "{}")?.state
           ?.accessToken
       : null;
+
+  const claimed = tokenTenant(token);
+  const tenantSlug =
+    claimed.slug ?? (typeof window !== "undefined" ? localStorage.getItem("tenantSlug") : null);
+  const tenantId =
+    claimed.id ?? (typeof window !== "undefined" ? localStorage.getItem("tenantId") : null);
 
   const headers: Record<string, string> = {
     ...(options?.body instanceof FormData
@@ -80,6 +110,12 @@ async function request<T>(
         // Refresh failed — fire logout callback
         if (on401Callback) on401Callback();
       }
+    }
+    // A tenant left over from another session: forget it and try once more with the token's own.
+    if (!tenantRetried && typeof window !== "undefined" && (await isTenantMismatch(res))) {
+      localStorage.removeItem("tenantSlug");
+      localStorage.removeItem("tenantId");
+      return request<T>(path, options, true);
     }
     throw new Error(await errorMessage(res));
   }
