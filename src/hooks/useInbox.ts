@@ -57,8 +57,9 @@ const RECONNECT_MAX_MS = 30_000;
 
 /**
  * Live inbox: each new message the moment logistics creates it. A browser WebSocket cannot set
- * an Authorization header, so the token rides as ?token= (logistics-api validates it like a
- * Bearer token). Reconnects with backoff; the poll in useInbox covers a socket that never connects.
+ * an Authorization header, so each connect first fetches a single-use stream ticket
+ * (POST /{tenant}/stream-ticket) and opens the socket with ?ticket=. Reconnects with backoff and
+ * a fresh ticket; the poll in useInbox covers a socket that never connects.
  */
 export function useInboxStream(tenantSlug: string, onMessage?: (m: InboxMessage) => void) {
   const qc = useQueryClient();
@@ -69,12 +70,30 @@ export function useInboxStream(tenantSlug: string, onMessage?: (m: InboxMessage)
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (closed.current || !tenantSlug || typeof WebSocket === "undefined") return;
-    const token = useAuthStore.getState().accessToken;
-    if (!token) return;
+    if (!useAuthStore.getState().accessToken) return;
+
+    const scheduleReconnect = () => {
+      if (closed.current) return;
+      const delay = Math.min(RECONNECT_BASE_MS * 2 ** attempt.current, RECONNECT_MAX_MS);
+      attempt.current += 1;
+      timer.current = setTimeout(connect, delay);
+    };
+
+    // A fresh single-use ticket for every connect and reconnect (the Bearer token stays in the
+    // request header, never in the socket URL).
+    let ticket: string;
+    try {
+      ({ ticket } = await api.post<{ ticket: string; expires_in: number }>(`/${tenantSlug}/stream-ticket`, {}));
+    } catch {
+      scheduleReconnect();
+      return;
+    }
+    if (closed.current) return;
+
     const wsBase = API_BASE.replace(/\/+$/, "").replace(/^http/, "ws");
-    const ws = new WebSocket(`${wsBase}/${tenantSlug}/riders/me/notifications/stream?token=${encodeURIComponent(token)}`);
+    const ws = new WebSocket(`${wsBase}/${tenantSlug}/riders/me/notifications/stream?ticket=${encodeURIComponent(ticket)}`);
     wsRef.current = ws;
     ws.onopen = () => {
       attempt.current = 0;
@@ -94,16 +113,13 @@ export function useInboxStream(tenantSlug: string, onMessage?: (m: InboxMessage)
       }
     };
     ws.onclose = () => {
-      if (closed.current) return;
-      const delay = Math.min(RECONNECT_BASE_MS * 2 ** attempt.current, RECONNECT_MAX_MS);
-      attempt.current += 1;
-      timer.current = setTimeout(connect, delay);
+      scheduleReconnect();
     };
   }, [tenantSlug, qc]);
 
   useEffect(() => {
     closed.current = false;
-    connect();
+    void connect();
     return () => {
       closed.current = true;
       if (timer.current) clearTimeout(timer.current);
