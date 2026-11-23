@@ -49,7 +49,22 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // profile: SSO status is the account's, and riders may sign in with a rider, driver or
   // courier role. Staff riders are created active (no KYC).
   const isPlatformAdmin = user?.roles?.includes("admin") || user?.roles?.includes("superuser");
-  if (isPlatformAdmin) return <>{children}</>;
+  if (isPlatformAdmin) {
+    // An admin who is not a rider here sees every "my" list empty (the API answers "rider not
+    // found in fleet"), which read as missing jobs. Say so instead.
+    const notRider = !membership.isLoading && (membership.data?.status ?? "none") === "none";
+    return (
+      <>
+        {notRider && (
+          <div className="bg-amber-50 px-4 py-2 text-center text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+            You are signed in as an admin, not as a rider of this business, so your jobs and earnings are empty.
+            Sign in with the rider&apos;s account to see theirs.
+          </div>
+        )}
+        {children}
+      </>
+    );
+  }
 
   if (membership.isLoading) {
     return (
